@@ -35,6 +35,7 @@
 #include "lwip/netdb.h"
 
 #include "wifi.h"
+#include "../config/wifi_cfg.h"
 
 ////////////////////////////////////////////////////////////////////////////////
 // Definitions
@@ -91,15 +92,15 @@ static void wifi_app_task(void *p_arg)
 		{
 			switch (msg.msgID)
 			{
-				case WIFI_APP_MSG_START_HTTP_SERVER:
+				case eWIFI_APP_MSG_START_HTTP_SERVER:
 					printf("WIFI_APP_MSG_START_HTTP_SERVER\n\n");
 					break;
 
-				case WIFI_APP_MSG_CONNECTING_FROM_HTTP_SERVER:
+				case eWIFI_APP_MSG_CONNECTING_FROM_HTTP_SERVER:
 					printf("WIFI_APP_MSG_CONNECTING_FROM_HTTP_SERVER\n\n");
 					break;
 
-				case WIFI_APP_MSG_STA_CONNECTED_GOT_IP:
+				case eWIFI_APP_MSG_STA_CONNECTED_GOT_IP:
 					 printf("WIFI_APP_MSG_STA_CONNECTED_GOT_IP\n\n");
 					break;
 
