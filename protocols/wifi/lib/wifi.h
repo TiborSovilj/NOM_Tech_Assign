@@ -54,7 +54,7 @@ typedef enum
 } wifi_app_message_e;
 
 /**
- * Structure for the message queue
+ *  Structure for the message queue
  */
 typedef struct wifi_app_queue_message_s
 {
@@ -63,7 +63,7 @@ typedef struct wifi_app_queue_message_s
 };
 
 /**
- * 
+ *  Structure for event messages.
  */
 typedef struct wifi_app_events_log_s
 {

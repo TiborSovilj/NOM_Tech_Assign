@@ -54,12 +54,20 @@
 // CONFIG Typedefs
 ////////////////////////////////////////////////////////////////////////////////
 
+/**
+ *  Forward declaration for events log structure.
+ */
 typedef struct wifi_app_events_log_s wifi_app_events_log_t;
 
+/**
+ *  Forward declaration for message queue structure.
+ */
 typedef struct wifi_app_queue_message_s wifi_app_queue_message_t;
 
 /**
- * 
+ *  Enum with wifi app events
+ *  @ref    g_wifi_app_events_table[]
+ *  @see    wifi_app_event_handler
  */
 typedef enum
 {
@@ -79,6 +87,8 @@ typedef enum
 ////////////////////////////////////////////////////////////////////////////////
 const wifi_app_events_log_t*    wifi_app_get_events_table   (void);
 const wifi_app_queue_message_t* wifi_app_get_queue_message  (void);
+
+
 #endif /* __WIFI_CFG_H  */
 
 ////////////////////////////////////////////////////////////////////////////////

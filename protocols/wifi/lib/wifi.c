@@ -48,26 +48,44 @@
 ////////////////////////////////////////////////////////////////////////////////
 // Static Global Variables
 ////////////////////////////////////////////////////////////////////////////////
-static QueueHandle_t wifi_app_queue_handle;
+// Queue handler for the WiFi app
+static QueueHandle_t g_wifi_app_queue_handle;
+
+// Global carrier for events logging table
 static const wifi_app_events_log_t* g_wifi_app_events_table;
+
+// Global carrier for queue message table
 static const wifi_app_queue_message_t* g_wifi_app_queue_msg;
 
+// Extern esp-netif container for default station init
 esp_netif_t *esp_netif_sta = NULL;
+
+// Extern esp-netif container for default AP init
 esp_netif_t *esp_netif_ap = NULL;
+
+
 ////////////////////////////////////////////////////////////////////////////////
 // Static Function Prototypes
 ////////////////////////////////////////////////////////////////////////////////
-
 static void wifi_app_task				(void *p_arg);
 static void wifi_app_event_handler_init	(void);
 static void wifi_app_default_wifi_init	(void);
 static void wifi_app_soft_ap_config		(void);
 static void wifi_app_event_handler		(void *arg, esp_event_base_t event_base, int32_t event_id, void *event_data);
 
+
 ////////////////////////////////////////////////////////////////////////////////
 // Static Function Definitions
 ////////////////////////////////////////////////////////////////////////////////
 
+////////////////////////////////////////////////////////////////////////////////
+/**
+ * @brief	Main task for the WiFi application.
+ * 
+ * @param	p_arg	Parameter which can be passed to the task
+ * @return	void
+ */
+////////////////////////////////////////////////////////////////////////////////
 static void wifi_app_task(void *p_arg)
 {
 	wifi_app_queue_message_t msg;
@@ -85,7 +103,7 @@ static void wifi_app_task(void *p_arg)
 
     while(1)
 	{
-		if (xQueueReceive(wifi_app_queue_handle, &msg, portMAX_DELAY))
+		if (xQueueReceive(g_wifi_app_queue_handle, &msg, portMAX_DELAY))
 		{
 			// TODO:  test when HTTP is implemented, if successfull -> delete switch statement
 			// printf ("%s", g_wifi_app_queue_msg[msg.msgID].msgContent);
@@ -111,20 +129,42 @@ static void wifi_app_task(void *p_arg)
 	}
 }
 
+////////////////////////////////////////////////////////////////////////////////
+/**
+ * @brief	Initializes the WiFi application event handler for WiFi and IP events.
+ * 
+ * @return	void
+ */
+////////////////////////////////////////////////////////////////////////////////
 static void wifi_app_event_handler_init(void)
 {
 	// Event loop for the WiFi driver
 	ESP_ERROR_CHECK(esp_event_loop_create_default());
 
-	// Event handler for the connection
+	// Event handler for the connection events (WIFI and IP);
 	esp_event_handler_instance_t instance_wifi_event;
 	esp_event_handler_instance_t instance_ip_event;
+
+	// Handler instance creation with abstraction layer functions.
 	ESP_ERROR_CHECK(esp_event_handler_instance_register(WIFI_EVENT, ESP_EVENT_ANY_ID, &wifi_app_event_handler, NULL, &instance_wifi_event));
 	ESP_ERROR_CHECK(esp_event_handler_instance_register(IP_EVENT, ESP_EVENT_ANY_ID, &wifi_app_event_handler, NULL, &instance_ip_event));
 
 	printf("FINISHED: wifi event handler init\n\n");
 }
 
+////////////////////////////////////////////////////////////////////////////////
+/**
+ * @brief		Initializes the TCP stack and default WiFi configuration.
+ * 				
+ * @param[in]	arg			Event data.
+ * @param[in]	event_base	Base ID of the event for which a handler will be registerd
+ * @param[in]	event_id	ID of the event for which a handler will be registerd.
+ * @param[in]	event_data	Event data.
+ * @return		void
+ * 
+ * @see			esp_event_handler_instance_register	
+ */
+////////////////////////////////////////////////////////////////////////////////
 static void wifi_app_event_handler(void *arg, esp_event_base_t event_base, int32_t event_id, void *event_data)
 {
 	if (event_base == WIFI_EVENT)
@@ -145,37 +185,51 @@ static void wifi_app_event_handler(void *arg, esp_event_base_t event_base, int32
 	}
 }
 
+////////////////////////////////////////////////////////////////////////////////
 /**
- * Initializes the TCP stack and default WiFi configuration.
+ * @brief		Initializes the TCP stack and default WiFi configuration.
+ * 
+ * @return		void
  */
+////////////////////////////////////////////////////////////////////////////////
 static void wifi_app_default_wifi_init(void)
 {
 	// Initialize the TCP stack
 	ESP_ERROR_CHECK(esp_netif_init());
 
-	// Default WiFi config - operations must perform in following order
+	// Default WiFi config
+	// @note FUNCTIONS MUST EXECUTE IN THIS PARTICULAR ORDER.
 	wifi_init_config_t wifi_init_config = WIFI_INIT_CONFIG_DEFAULT();
 	ESP_ERROR_CHECK(esp_wifi_init(&wifi_init_config));
 	ESP_ERROR_CHECK(esp_wifi_set_storage(WIFI_STORAGE_RAM));
+
 	esp_netif_sta = esp_netif_create_default_wifi_sta();
-	esp_netif_ap = esp_netif_create_default_wifi_ap();
+	esp_netif_ap  = esp_netif_create_default_wifi_ap();
 
 	printf("FINISHED: default wifi init\n\n");
 }
 
+////////////////////////////////////////////////////////////////////////////////
+/**
+ * @brief		Configures the WiFi access point settings and assigns the static 
+ * 				IP to the SoftAP.
+ * 
+ * @return		void
+ */
+////////////////////////////////////////////////////////////////////////////////
 static void wifi_app_soft_ap_config(void)
 {
 	// SoftAP - WiFi access point configuration
 	wifi_config_t ap_config =
 	{
 		.ap = {
-				.ssid = WIFI_AP_SSID,
-				.ssid_len = strlen(WIFI_AP_SSID),
-				.password = WIFI_AP_PASSWORD,
-				.channel = WIFI_AP_CHANNEL,
-				.ssid_hidden = WIFI_AP_SSID_HIDDEN,
-				.authmode = WIFI_AUTH_WPA2_PSK,
-				.max_connection = WIFI_AP_MAX_CONNECTIONS,
+				.ssid 			 = WIFI_AP_SSID,
+				.ssid_len 		 = strlen(WIFI_AP_SSID),
+				.password 		 = WIFI_AP_PASSWORD,
+				.channel 		 = WIFI_AP_CHANNEL,
+				.ssid_hidden 	 = WIFI_AP_SSID_HIDDEN,
+				.authmode 		 = WIFI_AUTH_WPA2_PSK,
+				.max_connection  = WIFI_AP_MAX_CONNECTIONS,
 				.beacon_interval = WIFI_AP_BEACON_INTERVAL,
 		},
 	};
@@ -204,6 +258,7 @@ static void wifi_app_soft_ap_config(void)
 	printf("FINISHED: softAP init\n\n");			
 }
 
+
 ////////////////////////////////////////////////////////////////////////////////
 /**
  *	@} <!-- END GROUP -->
@@ -221,6 +276,13 @@ static void wifi_app_soft_ap_config(void)
 // API Function Definitions
 ////////////////////////////////////////////////////////////////////////////////
 
+////////////////////////////////////////////////////////////////////////////////
+/**
+ * @brief		Starts a RTOS task for the WiFi app
+ * 
+ * @return		void
+ */
+////////////////////////////////////////////////////////////////////////////////
 void wifi_app_start(void)
 {
     printf ("__WIFI_APP_START__\n\n");
@@ -228,19 +290,29 @@ void wifi_app_start(void)
 	g_wifi_app_events_table = wifi_app_get_events_table();
 
     // Create message queue
-    wifi_app_queue_handle = xQueueCreate(eWIFI_APP_MSG_NUM_OF, sizeof(wifi_app_queue_message_t));
+    g_wifi_app_queue_handle = xQueueCreate(eWIFI_APP_MSG_NUM_OF, sizeof(wifi_app_queue_message_t));
 
     // Start the task
     xTaskCreate(&wifi_app_task, "wifi_app_task", WIFI_APP_TASK_STACK_SIZE, NULL, WIFI_APP_TASK_PRIORITY, NULL);
 }
 
+////////////////////////////////////////////////////////////////////////////////
+/**
+ * @brief		Sends a message to the queue. Returns pdTRUE if an item was 
+ * 				successfully sent to the queue, otherwise pdFALSE.	
+ * 
+ * @param[in]	msgID	Message ID from the wifi_app_message_e enum.
+ * @return		pdTRUE/pdFALSE.	
+ */
+////////////////////////////////////////////////////////////////////////////////
 BaseType_t  wifi_app_send_message(wifi_app_message_e msgID)
 {
     wifi_app_queue_message_t msg;
 	msg.msgID = msgID;
 
-	return xQueueSend(wifi_app_queue_handle, &msg, portMAX_DELAY);
+	return xQueueSend(g_wifi_app_queue_handle, &msg, portMAX_DELAY);
 }
+
 ////////////////////////////////////////////////////////////////////////////////
 /**
  *	@} <!-- END GROUP -->
