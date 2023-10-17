@@ -49,16 +49,26 @@ typedef enum
     eWIFI_APP_MSG_START_HTTP_SERVER = 0,
     eWIFI_APP_MSG_CONNECTING_FROM_HTTP_SERVER,
     eWIFI_APP_MSG_STA_CONNECTED_GOT_IP,
+
+    eWIFI_APP_MSG_NUM_OF
 } wifi_app_message_e;
 
 /**
  * Structure for the message queue
  */
-typedef struct
+typedef struct wifi_app_queue_message_s
 {
-    wifi_app_message_e msgID;
-} wifi_app_queue_message_t;
+    wifi_app_message_e  msgID;
+    char*               msgContent;
+};
 
+/**
+ * 
+ */
+typedef struct wifi_app_events_log_s
+{
+    char* eventMsg;
+};
 
 ////////////////////////////////////////////////////////////////////////////////
 // API Variables

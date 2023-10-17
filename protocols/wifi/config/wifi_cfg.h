@@ -54,10 +54,31 @@
 // CONFIG Typedefs
 ////////////////////////////////////////////////////////////////////////////////
 
+typedef struct wifi_app_events_log_s wifi_app_events_log_t;
+
+typedef struct wifi_app_queue_message_s wifi_app_queue_message_t;
+
+/**
+ * 
+ */
+typedef enum
+{
+    eWIFI_EVENT_AP_START = 0 ,
+    eWIFI_EVENT_AP_STOP,
+    eWIFI_EVENT_AP_STACONNECTED,
+    eWIFI_EVENT_AP_STADISCONNECTED,
+    eWIFI_EVENT_STA_START,
+    eWIFI_EVENT_STA_CONNECTED,
+    eWIFI_EVENT_STA_DISCONNECTED,
+
+    eWIFI_EVENT_STA_NUM_OF,
+}wifi_app_events_e;
+
 ////////////////////////////////////////////////////////////////////////////////
 // CONFIG Function Prototypes
 ////////////////////////////////////////////////////////////////////////////////
-
+const wifi_app_events_log_t*    wifi_app_get_events_table   (void);
+const wifi_app_queue_message_t* wifi_app_get_queue_message  (void);
 #endif /* __WIFI_CFG_H  */
 
 ////////////////////////////////////////////////////////////////////////////////
