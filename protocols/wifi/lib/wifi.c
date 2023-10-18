@@ -36,6 +36,7 @@
 
 #include "wifi.h"
 #include "../config/wifi_cfg.h"
+#include "../../http/lib/http_server.h"
 
 ////////////////////////////////////////////////////////////////////////////////
 // Definitions
@@ -49,7 +50,7 @@
 // Static Global Variables
 ////////////////////////////////////////////////////////////////////////////////
 // Queue handler for the WiFi app
-static QueueHandle_t g_wifi_app_queue_handle;
+static QueueHandle_t g_wifi_app_queue_handle = NULL;
 
 // Global carrier for events logging table
 static const wifi_app_events_log_t* g_wifi_app_events_table;
@@ -99,6 +100,9 @@ static void wifi_app_task(void *p_arg)
 	
 	ESP_ERROR_CHECK(esp_wifi_start());	// Start WiFi
 
+	// Send first event message
+	wifi_app_send_message(eWIFI_APP_MSG_START_HTTP_SERVER);
+
     printf("FINISHED: esp_wifi_start()\n\n");
 
     while(1)
@@ -112,6 +116,7 @@ static void wifi_app_task(void *p_arg)
 			{
 				case eWIFI_APP_MSG_START_HTTP_SERVER:
 					printf("WIFI_APP_MSG_START_HTTP_SERVER\n\n");
+					http_server_start();
 					break;
 
 				case eWIFI_APP_MSG_CONNECTING_FROM_HTTP_SERVER:
@@ -123,6 +128,7 @@ static void wifi_app_task(void *p_arg)
 					break;
 
 				default:
+					printf("DEFAULT QUEUE MSG");
 					break;
 			}
 		}

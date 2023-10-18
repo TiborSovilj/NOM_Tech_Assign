@@ -1,4 +1,11 @@
 idf_component_register( SRCS    "main.c" 
                                 "../protocols/wifi/lib/wifi.c"
                                 "../protocols/wifi/config/wifi_cfg.c"
-                    INCLUDE_DIRS ".")
+                                "../protocols/http/lib/http_server.c"
+                        INCLUDE_DIRS "."
+                        EMBED_FILES "../protocols/http/webpage/index.html"
+                                    "../protocols/http/webpage/app.css"
+                                    "../protocols/http/webpage/app.js"
+                                    "../protocols/http/webpage/favicon.ico"
+                                    "../protocols/http/webpage/jquery-3.3.1.min.js")
+        
