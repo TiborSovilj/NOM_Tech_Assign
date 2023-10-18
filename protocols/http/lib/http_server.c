@@ -60,24 +60,7 @@ extern const uint8_t favicon_ico_end[]				asm("_binary_favicon_ico_end");
 // Static Function Prototypes
 ////////////////////////////////////////////////////////////////////////////////
 static httpd_handle_t http_server_configure(void);
-//static esp_err_t http_server_jquery_handler(httpd_req_t *req);
 
-typedef struct 
-{
-	const uint8_t* data
-}containerStruct;
-
-typedef enum{
-	eONE,
-	eTWO,
-
-	eCONTAINER_NUM_OF
-}containtermembers_e;
-
-containerStruct containerTable[eCONTAINER_NUM_OF] = {
-	[ eONE		] = {.data = index_html_start 	},
-	[ eTWO		] = {.data = index_html_end		},
-};
 ////////////////////////////////////////////////////////////////////////////////
 // Static Function Definitions
 ////////////////////////////////////////////////////////////////////////////////
@@ -105,7 +88,7 @@ static esp_err_t http_server_index_html_handler(httpd_req_t *req)
 	printf("index.html requested\n");
 
 	httpd_resp_set_type(req, "text/html");
-	httpd_resp_send(req, (const char *)containerTable[eONE].data, containerTable[eTWO].data - containerTable[eONE].data);
+	httpd_resp_send(req, (const char *)index_html_start, index_html_end - index_html_start);
 
 	return ESP_OK;
 }
