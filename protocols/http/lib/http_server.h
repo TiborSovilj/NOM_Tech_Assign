@@ -36,6 +36,11 @@
 #define HTTP_SERVER_MONITOR_STACK_SIZE		( 4096 )
 #define HTTP_SERVER_MONITOR_PRIORITY		( 3 )
 
+#define OTA_UPDATE_PENDING 					( 0  )
+#define OTA_UPDATE_SUCCESSFUL				( 1  )
+#define OTA_UPDATE_FAILED					( -1 )
+
+
 ////////////////////////////////////////////////////////////////////////////////
 // API Typedefs
 ////////////////////////////////////////////////////////////////////////////////
@@ -68,11 +73,14 @@ typedef struct http_server_queue_message
 ////////////////////////////////////////////////////////////////////////////////
 // API Function Prototypes
 ////////////////////////////////////////////////////////////////////////////////
-
-
 void http_server_start(void);
-
 void http_server_stop(void);
+BaseType_t http_server_monitor_send_message(http_server_message_e msgID);
+
+/**
+ * Timer callback function which calls esp_restart upon successful firmware update.
+ */
+void http_server_fw_update_reset_callback(void *arg);
 
 #endif /* __HTTP_SERVER_MODULE_H */
 
