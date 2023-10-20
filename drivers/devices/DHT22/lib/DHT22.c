@@ -88,12 +88,7 @@ static void dht22_task(void *p_arg)
 
 	for (;;)
 	{
-		printf("=== Reading DHT ===\n");
-		
 		dht22_errorHandler(dht22_read_register());
-
-		printf("Hum %.1f\n", dht22_get_humidity());
-		printf("Tmp %.1f\n", dht22_get_temperature());
 
 		// Manufacturer demands at least 2 seconds before reading again
 		vTaskDelay(4000 / portTICK_PERIOD_MS);

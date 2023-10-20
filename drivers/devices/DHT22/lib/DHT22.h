@@ -34,6 +34,7 @@
 
 #define DHT22_TASK_STACK_SIZE	( 4096 )
 #define DHT22_TASK_PRIORITY		( 5 )
+
 #define DHT22_GPIO				( 2 )
 
 
