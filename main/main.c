@@ -2,6 +2,7 @@
 #include "nvs_flash.h"
 
 #include "../protocols/wifi/lib/wifi.h"
+#include "../drivers/devices/DHT22/lib/DHT22.h"
 
 
 void app_main(void)
@@ -18,4 +19,6 @@ void app_main(void)
 
 	// Start Wifi
 	wifi_app_start();
+
+	dht22_task_start();
 }

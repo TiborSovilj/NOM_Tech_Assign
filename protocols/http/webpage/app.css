@@ -68,7 +68,17 @@ input[type="button"]:active {
     background-color: #fccfcf;
 }
 
+.inline-container{
+    display: inline-block;
+    text-align: center;
+    font-size: 20px;
+    color: white;
+    padding: 5px 50px 5px 10px;
+}
 
+#temperature_reading, #humidity_reading{
+    color:#75ff75;
+}
 
 
 
