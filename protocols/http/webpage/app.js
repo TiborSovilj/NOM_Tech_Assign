@@ -98,6 +98,24 @@ function getUpdateStatus()
     }
 }
 
+/**
+ * Displays the reboot countdown.
+ */
+function otaRebootTimer() 
+{	
+    document.getElementById("ota_update_status").innerHTML = "OTA Firmware Update Complete. This page will close shortly, Rebooting in: " + seconds;
+
+    if (--seconds == 0) 
+	{
+        clearTimeout(otaTimerVar);
+        window.location.reload();
+    } 
+	else 
+	{
+        otaTimerVar = setTimeout(otaRebootTimer, 1000);
+    }
+}
+
 
 
 

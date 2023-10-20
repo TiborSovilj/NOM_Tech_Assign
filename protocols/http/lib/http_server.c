@@ -95,7 +95,7 @@ static void http_server_fw_update_reset_timer(void)
 {
 	if (g_fw_update_status == OTA_UPDATE_SUCCESSFUL)
 	{
-		printf("http_server_fw_update_reset_timer: FW updated successful starting FW update reset timer");
+		printf("http_server_fw_update_reset_timer: FW updated successful starting FW update reset timer\n");
 
 		// Give the web page a chance to receive an acknowledge back and initialize the timer
 		ESP_ERROR_CHECK(esp_timer_create(&fw_update_reset_args, &fw_update_reset));
@@ -103,7 +103,7 @@ static void http_server_fw_update_reset_timer(void)
 	}
 	else
 	{
-		printf("http_server_fw_update_reset_timer: FW update unsuccessful");
+		printf("http_server_fw_update_reset_timer: FW update unsuccessful\n");
 	}
 }
 
@@ -277,6 +277,7 @@ static esp_err_t http_server_favicon_ico_handler(httpd_req_t *req)
  * @param 	req		HTTP request for which the uri needs to be handled.
  * @return 	Error code 
  */
+////////////////////////////////////////////////////////////////////////////////
 esp_err_t http_server_OTA_update_handler(httpd_req_t *req)
 {
 	esp_ota_handle_t ota_handle;					
@@ -311,7 +312,7 @@ esp_err_t http_server_OTA_update_handler(httpd_req_t *req)
 			return ESP_FAIL;
 		}
 
-		printf("http_server_OTA_update_handler: OTA RX: %d of %d\n", content_received, content_length);
+		printf("http_server_OTA_update_handler: OTA RX: %d of %d\r", content_received, content_length);
 
 		// Verify weather if this is the first occurence of any data = .bin file header,
 		// else proceed with writing OTA data to a selected partition over esp_ota_write()

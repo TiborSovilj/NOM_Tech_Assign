@@ -44,6 +44,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 // API Typedefs
 ////////////////////////////////////////////////////////////////////////////////
+
 /**
  * Messages for the HTTP monitor
  */
@@ -65,10 +66,10 @@ typedef struct http_server_queue_message
 	http_server_message_e msgID;
 } http_server_queue_message_t;
 
+
 ////////////////////////////////////////////////////////////////////////////////
 // API Variables
 ////////////////////////////////////////////////////////////////////////////////
-
 
 ////////////////////////////////////////////////////////////////////////////////
 // API Function Prototypes
@@ -76,10 +77,6 @@ typedef struct http_server_queue_message
 void http_server_start(void);
 void http_server_stop(void);
 BaseType_t http_server_monitor_send_message(http_server_message_e msgID);
-
-/**
- * Timer callback function which calls esp_restart upon successful firmware update.
- */
 void http_server_fw_update_reset_callback(void *arg);
 
 #endif /* __HTTP_SERVER_MODULE_H */
