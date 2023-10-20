@@ -6,19 +6,25 @@
 		<meta name="apple-mobile-web-app-capable" content="yes" />
 		<script src='jquery-3.3.1.min.js'></script>
 		<link rel="stylesheet" href="app.css">
-		<link rel="icon" type="image/x-icon" href="favicon.ico">
 		<script async src="app.js"></script>
-		<title>ESP32 Udemy Course</title>
+		<title>NOMNIO_TA</title>
 	</head>
 	<body>
 	<header>
-		<h1>Tech. Assignment</h1>
-		<h1>for job application at</h1>
-		<h1>NOMNIO d.o.o.</h1>
+		<h1>Technical Assignment NOMNIO d.o.o.</h1>
 	</header>
 		
-	<div>
-		<h2 class="hello">HELLO FROM HTTP SERVER</h2>
+	<div class="section_container" id="OTA">
+	<h2 class="section_header">ESP32 Firmware Update</h2>
+		<label id="latest_firmware_label">LATEST FIRMWARE: </label>
+		<div id="latest_firmware"></div> 
+		<input type="file" id="selected_file" accept=".bin" style="display: none;" onchange="getFileInfo()" />
+		<div class="buttons">
+			<input type="button" value="Select File" onclick="document.getElementById('selected_file').click();" />
+			<input type="button" value="Update Firmware" onclick="updateFirmware()" />
+		</div>
+		<h4 id="file_info">FILE_INFO</h4>	
+		<h4 id="ota_update_status">UPDATE_STATUS</h4>
 	</div>
 		
 	</body>
