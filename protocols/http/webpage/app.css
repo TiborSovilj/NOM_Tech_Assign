@@ -68,11 +68,16 @@ input[type="button"]:active {
     background-color: #fccfcf;
 }
 
+#wifi_connect_status
+{
+    color:#ffffff;
+}
+
 .inline-container{
     display: inline-block;
     text-align: center;
     font-size: 20px;
-    color: white;
+    color: #ffffff;
     padding: 5px 50px 5px 10px;
 }
 
