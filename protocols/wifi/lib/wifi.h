@@ -37,6 +37,7 @@
 #define WIFI_MAX_SSID_LENGTH        ( 32 )              // IEEE standard maximum
 #define WIFI_MAX_PASSWORD_LENGTH    ( 64 )              // IEEE standard maximum
 #define WIFI_MIN_PASSWORD_LENGTH    ( 8 )               // Less than that causes runtime errors
+#define MAX_CONNECTION_RETRIES		( 5 )				// Retry number on disconnect
 
 ////////////////////////////////////////////////////////////////////////////////
 // API Typedefs
@@ -49,6 +50,7 @@ typedef enum
     eWIFI_APP_MSG_START_HTTP_SERVER = 0,
     eWIFI_APP_MSG_CONNECTING_FROM_HTTP_SERVER,
     eWIFI_APP_MSG_STA_CONNECTED_GOT_IP,
+    eWIFI_APP_MSG_STA_DISCONNECTED,
 
     eWIFI_APP_MSG_NUM_OF
 } wifi_app_message_e;
@@ -79,8 +81,9 @@ extern esp_netif_t *esp_netif_ap;
 ////////////////////////////////////////////////////////////////////////////////
 // API Function Prototypes
 ////////////////////////////////////////////////////////////////////////////////
-void wifi_app_start(void);
-BaseType_t wifi_app_send_message(wifi_app_message_e msgID);
+void            wifi_app_start          (void);
+BaseType_t      wifi_app_send_message   (wifi_app_message_e msgID);
+wifi_config_t*  wifi_app_get_wifi_config    (void);
 
 #endif /* __WIFI_MODULE_H */
 
