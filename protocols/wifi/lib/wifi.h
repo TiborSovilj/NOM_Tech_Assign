@@ -42,6 +42,12 @@
 ////////////////////////////////////////////////////////////////////////////////
 // API Typedefs
 ////////////////////////////////////////////////////////////////////////////////
+
+/**
+ *  Function pointer typedef for an event when the WiFi is connected.
+ */
+typedef void (*wifi_connected_event_callback_t)(void);
+
 /**
  *  Message enums for the WiFi application task
  */
@@ -81,9 +87,11 @@ extern esp_netif_t *esp_netif_ap;
 ////////////////////////////////////////////////////////////////////////////////
 // API Function Prototypes
 ////////////////////////////////////////////////////////////////////////////////
-void            wifi_app_start          (void);
-BaseType_t      wifi_app_send_message   (wifi_app_message_e msgID);
+void            wifi_app_start              (void);
+BaseType_t      wifi_app_send_message       (wifi_app_message_e msgID);
 wifi_config_t*  wifi_app_get_wifi_config    (void);
+void            wifi_app_set_callback       (wifi_connected_event_callback_t callback);
+void            wifi_app_call_callback      (void);
 
 #endif /* __WIFI_MODULE_H */
 

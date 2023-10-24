@@ -64,6 +64,9 @@ static const wifi_app_events_log_t* g_wifi_app_events_table;
 // Global carrier for queue message table
 static const wifi_app_queue_message_t* g_wifi_app_queue_msg;
 
+// Callback for wifi connected event
+static wifi_connected_event_callback_t wifi_connected_event_callback;
+
 // Extern esp-netif container for default station init
 esp_netif_t *esp_netif_sta = NULL;
 
@@ -154,7 +157,10 @@ static void wifi_app_task(void *p_arg)
 					printf("WIFI_APP_MSG_STA_CONNECTED_GOT_IP\n\n");
 
 					http_server_monitor_send_message(HTTP_MSG_WIFI_CONNECT_SUCCESS);
-
+					if(wifi_connected_event_callback)
+					{
+						wifi_app_call_callback();
+					}
 					break;
 
 				case eWIFI_APP_MSG_STA_DISCONNECTED:
@@ -386,6 +392,31 @@ BaseType_t  wifi_app_send_message(wifi_app_message_e msgID)
 wifi_config_t*  wifi_app_get_wifi_config(void)
 {
 	return wifi_config;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+/**
+ * @brief 		Setter for the callback function.
+ * 
+ * @param[in]	callback	fuinction to be set as callback
+ * @return		void
+ */
+////////////////////////////////////////////////////////////////////////////////
+void wifi_app_set_callback (wifi_connected_event_callback_t callback)
+{
+	wifi_connected_event_callback = callback;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+/**
+ * @brief 		Calls the callback function.
+ * 
+ * @return		void
+ */
+////////////////////////////////////////////////////////////////////////////////
+void wifi_app_call_callback (void)
+{
+	wifi_connected_event_callback();
 }
 
 ////////////////////////////////////////////////////////////////////////////////
