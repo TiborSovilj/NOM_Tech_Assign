@@ -86,6 +86,19 @@ input[type="button"]:active {
 }
 
 
+#sntp_status{
+    color:#ffb477;
+    font-size: 20px;
+    padding: 5px;
+}
+
+#local_time{
+    color:#75ff75;
+    font-size: 20px;
+    padding: 5px;
+}
+
+
 
 
 

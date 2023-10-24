@@ -11,6 +11,7 @@ var wifiConnectInterval = null;
 $(document).ready(function(){
 	getUpdateStatus();
 	startDHTSensorInterval();
+	startLocalTimeInterval();
 	$("#connect_wifi").on("click", function(){
 		checkCredentials();
 	}); 
@@ -264,5 +265,23 @@ function showPassword()
 	{
 		x.type = "password";
 	}
+}
+
+/*
+*	Sets the interval for displaying local time.
+*/
+function startLocalTimeInterval()
+{
+   setInterval(getLocalTime, 10000);
+}
+
+/**
+*	Gets the local time. Time is updated when ESP32 uC is connected to wifi
+*/
+function getLocalTime()
+{
+   $.getJSON('/localTime.json', function(data) {
+	   $("#local_time").text(data["time"]);
+   });
 }
 
