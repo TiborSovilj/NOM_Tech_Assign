@@ -4,18 +4,25 @@
 // All rights reserved.
 ////////////////////////////////////////////////////////////////////////////////
 /**
- *	@file		wifi_cfg.c
+ *	@file		mqtt_cert.c
  *	@author   	Tibor Sovilj
- *	@date		12.10.2023
+ *	@date		26.10.2023
  *	@version	V0.0.1
 
- *	@brief 		Configuration source file for the WiFi protocol.
+ *	@brief 		Source file for MQTT TLS certificate. File contains definition
+                for getter function that provides mqtt lib with certificate
+                string which is hardcoded in this particular case.
+                
+                More info on reasoning behing this implementation is on the 
+                following link:
+
+                https://github.com/espressif/esp-idf/issues/5177 
  */
 ////////////////////////////////////////////////////////////////////////////////
 
 ////////////////////////////////////////////////////////////////////////////////
 /**
- *  @addtogroup WIFI_CONFIG
+ *  @addtogroup MQTT_CERT_CONFIG
  *  @{ <!-- BEGIN GROUP -->
  */
 ////////////////////////////////////////////////////////////////////////////////
@@ -28,7 +35,11 @@
 ////////////////////////////////////////////////////////////////////////////////
 // CONFIG Variables and Tables
 ////////////////////////////////////////////////////////////////////////////////
-//
+
+/**
+ *  Hardcoded certificate string containing client key, client certificate and 
+ *  server certificate.
+ */
 const char* gp_mqtt_certificate= "-----BEGIN RSA PRIVATE KEY-----\n\
 MIIEowIBAAKCAQEAsgyMKg+og7h7AhVoMvQDXDyA1LrWHO2BTrJ6HdARLqsh9QP1\n\
 OatY05b40092Uc1BMkOTlj+6bug6qIRYpZi6VrGmtCwQ+RASWiYIhbfTEidPvu8F\n\
@@ -103,6 +114,14 @@ m/XriWr/Cq4h/JfB7NTsezVslgkBaoU=\n\
 
 ////////////////////////////////////////////////////////////////////////////////
 // CONFIG Functions definitions
+////////////////////////////////////////////////////////////////////////////////
+
+////////////////////////////////////////////////////////////////////////////////
+/**
+ * @brief   Getter function for hardcoded certificate string.
+ * 
+ * @return  Certificate string.
+ */
 ////////////////////////////////////////////////////////////////////////////////
 const char* mqtt_get_certificate (void)
 {

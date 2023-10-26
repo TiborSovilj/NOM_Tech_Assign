@@ -48,7 +48,7 @@
 const char* mqtt_get_certificate (void);
 
 
-#endif /* __MQTT_CERTH  */
+#endif /* __MQTT_CERT_H  */
 
 ////////////////////////////////////////////////////////////////////////////////
 /*!
