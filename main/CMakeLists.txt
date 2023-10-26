@@ -3,11 +3,12 @@ idf_component_register( SRCS    "main.c"
                                 "../protocols/wifi/config/wifi_cfg.c"
                                 "../protocols/http/lib/http_server.c"
                                 "../protocols/sntp/lib/sntp.c"
-                                "../drivers/devices/DHT22/lib/DHT22.c/"
+                                "../drivers/devices/DHT22/lib/DHT22.c"
                         INCLUDE_DIRS "."
                         EMBED_FILES "../protocols/http/webpage/index.html"
                                     "../protocols/http/webpage/app.css"
                                     "../protocols/http/webpage/app.js"
                                     "../protocols/http/webpage/favicon.ico"
-                                    "../protocols/http/webpage/jquery-3.3.1.min.js")
+                                    "../protocols/http/webpage/jquery-3.3.1.min.js"
+                                    "../protocols/mqtt/mqtt_eclipseprojects_io.pem")
         
