@@ -49,6 +49,12 @@
 ////////////////////////////////////////////////////////////////////////////////
 // Static Global Variables
 ////////////////////////////////////////////////////////////////////////////////
+//
+wifi_config_t* wifi_config = NULL;
+
+// 
+static int g_retry_number;
+
 // Queue handler for the WiFi app
 static QueueHandle_t g_wifi_app_queue_handle = NULL;
 
@@ -57,6 +63,9 @@ static const wifi_app_events_log_t* g_wifi_app_events_table;
 
 // Global carrier for queue message table
 static const wifi_app_queue_message_t* g_wifi_app_queue_msg;
+
+// Callback for wifi connected event
+static wifi_connected_event_callback_t wifi_connected_event_callback;
 
 // Extern esp-netif container for default station init
 esp_netif_t *esp_netif_sta = NULL;
@@ -73,11 +82,26 @@ static void wifi_app_event_handler_init	(void);
 static void wifi_app_default_wifi_init	(void);
 static void wifi_app_soft_ap_config		(void);
 static void wifi_app_event_handler		(void *arg, esp_event_base_t event_base, int32_t event_id, void *event_data);
-
+static void wifi_app_connect_sta		(void);
 
 ////////////////////////////////////////////////////////////////////////////////
 // Static Function Definitions
 ////////////////////////////////////////////////////////////////////////////////
+
+
+////////////////////////////////////////////////////////////////////////////////
+/**
+ * @brief	Connects the ESP32 to an external AP using the updated station c
+ * 			onfiguration
+ * 
+ * @return	void
+ */
+////////////////////////////////////////////////////////////////////////////////
+static void wifi_app_connect_sta(void)
+{
+	ESP_ERROR_CHECK(esp_wifi_set_config(ESP_IF_WIFI_STA, wifi_app_get_wifi_config()));
+	ESP_ERROR_CHECK(esp_wifi_connect());
+}
 
 ////////////////////////////////////////////////////////////////////////////////
 /**
@@ -121,10 +145,29 @@ static void wifi_app_task(void *p_arg)
 
 				case eWIFI_APP_MSG_CONNECTING_FROM_HTTP_SERVER:
 					printf("WIFI_APP_MSG_CONNECTING_FROM_HTTP_SERVER\n\n");
+
+					wifi_app_connect_sta();
+					g_retry_number = 0;
+					http_server_monitor_send_message(HTTP_MSG_WIFI_CONNECT_INIT);
+
+					
 					break;
 
 				case eWIFI_APP_MSG_STA_CONNECTED_GOT_IP:
 					printf("WIFI_APP_MSG_STA_CONNECTED_GOT_IP\n\n");
+
+					http_server_monitor_send_message(HTTP_MSG_WIFI_CONNECT_SUCCESS);
+					if(wifi_connected_event_callback)
+					{
+						wifi_app_call_callback();
+					}
+					break;
+
+				case eWIFI_APP_MSG_STA_DISCONNECTED:
+					printf("WIFI_APP_MSG_STA_DISCONNECTED\n\n");
+
+					http_server_monitor_send_message(HTTP_MSG_WIFI_CONNECT_FAIL);
+
 					break;
 
 				default:
@@ -176,6 +219,19 @@ static void wifi_app_event_handler(void *arg, esp_event_base_t event_base, int32
 	if (event_base == WIFI_EVENT)
 	{
 		printf ("%s", g_wifi_app_events_table[event_id].eventMsg);
+
+		if (event_id == WIFI_EVENT_STA_DISCONNECTED)
+		{
+				if (g_retry_number < MAX_CONNECTION_RETRIES)
+				{
+					esp_wifi_connect();
+					g_retry_number++;
+				}
+				else
+				{
+					wifi_app_send_message(eWIFI_APP_MSG_STA_DISCONNECTED);
+				}
+		}
 	}
 	else if (event_base == IP_EVENT)
 	{
@@ -186,6 +242,9 @@ static void wifi_app_event_handler(void *arg, esp_event_base_t event_base, int32
 		{
 			case IP_EVENT_STA_GOT_IP:
 				printf("IP_EVENT_STA_GOT_IP\n\n");
+
+				wifi_app_send_message(eWIFI_APP_MSG_STA_CONNECTED_GOT_IP);
+
 				break;
 		}
 	}
@@ -295,6 +354,10 @@ void wifi_app_start(void)
 
 	g_wifi_app_events_table = wifi_app_get_events_table();
 
+	// emory allocation for the wifi sonfiguration
+	wifi_config = (wifi_config_t*)malloc(sizeof(wifi_config_t));
+	memset(wifi_config, 0x00, sizeof(wifi_config_t));
+
     // Create message queue
     g_wifi_app_queue_handle = xQueueCreate(eWIFI_APP_MSG_NUM_OF, sizeof(wifi_app_queue_message_t));
 
@@ -317,6 +380,43 @@ BaseType_t  wifi_app_send_message(wifi_app_message_e msgID)
 	msg.msgID = msgID;
 
 	return xQueueSend(g_wifi_app_queue_handle, &msg, portMAX_DELAY);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+/**
+ * @brief		Getter function for the wifi configuration parameters
+ * 
+ * @return		wifi configuration structure.	
+ */
+////////////////////////////////////////////////////////////////////////////////
+wifi_config_t*  wifi_app_get_wifi_config(void)
+{
+	return wifi_config;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+/**
+ * @brief 		Setter for the callback function.
+ * 
+ * @param[in]	callback	fuinction to be set as callback
+ * @return		void
+ */
+////////////////////////////////////////////////////////////////////////////////
+void wifi_app_set_callback (wifi_connected_event_callback_t callback)
+{
+	wifi_connected_event_callback = callback;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+/**
+ * @brief 		Calls the callback function.
+ * 
+ * @return		void
+ */
+////////////////////////////////////////////////////////////////////////////////
+void wifi_app_call_callback (void)
+{
+	wifi_connected_event_callback();
 }
 
 ////////////////////////////////////////////////////////////////////////////////

@@ -6,3 +6,5 @@ cmake_minimum_required(VERSION 3.16)
 
 include($ENV{IDF_PATH}/tools/cmake/project.cmake)
 project(main)
+
+#target_add_binary_data(main.elf "protocols/mqtt//mqtt_eclipseprojects_io.pem" TEXT)

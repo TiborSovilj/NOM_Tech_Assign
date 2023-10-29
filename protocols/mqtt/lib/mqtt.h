@@ -4,79 +4,54 @@
 // All rights reserved.
 ////////////////////////////////////////////////////////////////////////////////
 /**
- *	@file		http_server.h
+ *	@file		mqtt.h
  *	@author   	Tibor Sovilj
- *	@date		16.10.2023
+ *	@date		25.10.2023
  *	@version	V0.0.1
 
- *	@brief 		Header file for the HTTP server..
+ *	@brief 		Header file for the MQTT protocol.
  */
 ////////////////////////////////////////////////////////////////////////////////
 
 ////////////////////////////////////////////////////////////////////////////////
 /**
- *	@addtogroup WIFI_API
+ *	@addtogroup MQTT_API
  *	@{ <!-- BEGIN GROUP -->
  */
 ////////////////////////////////////////////////////////////////////////////////
-#ifndef __HTTP_SERVER_MODULE_H
-#define __HTTP_SERVER_MODULE_H
+#ifndef __MQTT_MODULE_H
+#define __MQTT_MODULE_H
 
 ////////////////////////////////////////////////////////////////////////////////
 // Includes
 ////////////////////////////////////////////////////////////////////////////////
 #include <stdio.h>
 
+
 ////////////////////////////////////////////////////////////////////////////////
 // API Definitions
 ////////////////////////////////////////////////////////////////////////////////
-#define HTTP_SERVER_TASK_STACK_SIZE			( 8192 )
-#define HTTP_SERVER_TASK_PRIORITY			( 4 )
+#define MQTT_PUBLISHER_TASK_STACK_SIZE      ( 8192 )
+#define MQTT_PUBLISHER_TASK_PRIORITY        ( 6 )
 
-#define HTTP_SERVER_MONITOR_STACK_SIZE		( 4096 )
-#define HTTP_SERVER_MONITOR_PRIORITY		( 3 )
-
-#define OTA_UPDATE_PENDING 					( 0  )
-#define OTA_UPDATE_SUCCESSFUL				( 1  )
-#define OTA_UPDATE_FAILED					( -1 )
-
-
+#define MQTT_BUTTON_PUBLISH_TASK_STACK_SIZE     ( 8192 )
+#define MQTT_BUTTON_PUBLISH_TASK_PRIORITY       ( 6 )
 ////////////////////////////////////////////////////////////////////////////////
 // API Typedefs
 ////////////////////////////////////////////////////////////////////////////////
 
-/**
- * Connection status for Wifi
- */
-typedef enum http_server_wifi_connect_status
+typedef enum 
 {
-	NONE = 0,
-	HTTP_WIFI_STATUS_CONNECTING,
-	HTTP_WIFI_STATUS_CONNECT_FAILED,
-	HTTP_WIFI_STATUS_CONNECT_SUCCESS,
-} http_server_wifi_connect_status_e;
+    eMQTT_SIGNAL_MSG_BUTTON_IT = 0,
+    eMQTT_SIGNAL_INTERVAL_5S,
 
-/**
- * Messages for the HTTP monitor
- */
-typedef enum http_server_message
-{
-	HTTP_MSG_WIFI_CONNECT_INIT = 0,
-	HTTP_MSG_WIFI_CONNECT_SUCCESS,
-	HTTP_MSG_WIFI_CONNECT_FAIL,
-	HTTP_MSG_OTA_UPDATE_SUCCESSFUL,
-	HTTP_MSG_OTA_UPDATE_FAILED,
-	HTTP_MSG_OTA_UPATE_INITIALIZED,
-	HTTP_MSG_TIME_SERVICE_INITIALIZED
-} http_server_message_e;
+    eMQTT_SIGNAL_NUM_OF
+}mqtt_signal_message_e;
 
-/**
- * Structure for the message queue
- */
-typedef struct http_server_queue_message
+typedef struct
 {
-	http_server_message_e msgID;
-} http_server_queue_message_t;
+    mqtt_signal_message_e msgID;
+}mqtt_signal_message_t;
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -86,15 +61,17 @@ typedef struct http_server_queue_message
 ////////////////////////////////////////////////////////////////////////////////
 // API Function Prototypes
 ////////////////////////////////////////////////////////////////////////////////
-void http_server_start(void);
-void http_server_stop(void);
-BaseType_t http_server_monitor_send_message(http_server_message_e msgID);
-void http_server_fw_update_reset_callback(void *arg);
+void mqtt_app_start(void);
+BaseType_t  mqtt_send_signal_message(mqtt_signal_message_e msgID);
 
-#endif /* __HTTP_SERVER_MODULE_H */
+#endif /* __MQTT_MODULE_H */
 
 ////////////////////////////////////////////////////////////////////////////////
 /**
  *	@} <!-- END GROUP -->
  */
 ///////////////////////////////////////////////////////////////////////////////
+
+
+
+

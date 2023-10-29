@@ -68,16 +68,34 @@ input[type="button"]:active {
     background-color: #fccfcf;
 }
 
+#wifi_connect_status
+{
+    color:#ffffff;
+}
+
 .inline-container{
     display: inline-block;
     text-align: center;
     font-size: 20px;
-    color: white;
+    color: #ffffff;
     padding: 5px 50px 5px 10px;
 }
 
 #temperature_reading, #humidity_reading{
     color:#75ff75;
+}
+
+
+#sntp_status{
+    color:#ffb477;
+    font-size: 20px;
+    padding: 5px;
+}
+
+#local_time{
+    color:#75ff75;
+    font-size: 20px;
+    padding: 5px;
 }
 
 

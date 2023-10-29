@@ -33,6 +33,7 @@
 
 #include "http_server.h"
 #include "../../wifi/lib/wifi.h"
+#include "../../sntp/lib/sntp.h"
 
 ////////////////////////////////////////////////////////////////////////////////
 // Definitions
@@ -46,6 +47,9 @@
 // Static Global Variables
 ////////////////////////////////////////////////////////////////////////////////
 
+// Wifi connect status
+static int g_wifi_connect_status = NONE;
+
 // Firmware update status
 static int g_fw_update_status = OTA_UPDATE_PENDING;
 
@@ -57,6 +61,9 @@ static TaskHandle_t task_http_server_monitor = NULL;
 
 // Queue handle used to manipulate the main queue of events
 static QueueHandle_t http_server_monitor_queue_handle;
+
+// Local time set flag
+static bool g_is_local_time_set = false;
 
 // ESP32 timer configuration passed to esp_timer_create. 
 const esp_timer_create_args_t fw_update_reset_args = {
@@ -129,14 +136,17 @@ static void http_server_monitor(void *parameter)
 			{
 				case HTTP_MSG_WIFI_CONNECT_INIT:
 					printf("HTTP_MSG_WIFI_CONNECT_INIT\n");
+					g_wifi_connect_status = HTTP_WIFI_STATUS_CONNECTING;
 					break;
 
 				case HTTP_MSG_WIFI_CONNECT_SUCCESS:
 					printf("HTTP_MSG_WIFI_CONNECT_SUCCESS\n");
+					g_wifi_connect_status = HTTP_WIFI_STATUS_CONNECT_SUCCESS;
 					break;
 
 				case HTTP_MSG_WIFI_CONNECT_FAIL:
 					printf("HTTP_MSG_WIFI_CONNECT_FAIL\n");
+					g_wifi_connect_status = HTTP_WIFI_STATUS_CONNECT_FAILED;
 					break;
 
 				case HTTP_MSG_OTA_UPDATE_SUCCESSFUL:
@@ -158,6 +168,12 @@ static void http_server_monitor(void *parameter)
 					printf("HTTP_MSG_OTA_UPDATE_INITIALIZED\n");
 
 					g_fw_update_status = OTA_UPDATE_FAILED;
+
+					break;
+
+				case HTTP_MSG_TIME_SERVICE_INITIALIZED:
+					printf("HTTP_MSG_TIME_SERVICE_INITIALIZED");
+					g_is_local_time_set = true;
 
 					break;
 
@@ -263,6 +279,15 @@ static esp_err_t http_server_favicon_ico_handler(httpd_req_t *req)
 	return ESP_OK;
 }
 
+////////////////////////////////////////////////////////////////////////////////
+/**
+ * @brief 		DHT22 reading handler and JSON builder, later used in app.js
+ * 				requests.
+ * 
+ * @param[in]	req		HTTP request for which the uri needs to be handled.
+ * @return 		Error code
+ */
+////////////////////////////////////////////////////////////////////////////////
 static esp_err_t http_server_get_dht_sensor_readings_json_handler(httpd_req_t *req)
 {
 	printf("/dhtSensor.json requested\n");
@@ -277,6 +302,104 @@ static esp_err_t http_server_get_dht_sensor_readings_json_handler(httpd_req_t *r
 	return ESP_OK;
 }
 
+////////////////////////////////////////////////////////////////////////////////
+/**
+ * @brief			wifiConnect.json handler is invoked after the connect button 
+ * 					is pressed and handles receiving the SSID and password entered 
+ * 					by the user.
+ * 
+ * @param[in]	req	HTTP request for which the uri needs to be handled.
+ * @return 		Error code
+ */
+////////////////////////////////////////////////////////////////////////////////
+static esp_err_t http_server_wifi_connect_json_handler(httpd_req_t *req)
+{
+	printf("/wifiConnect.json requested\n");
+
+	size_t len_ssid = 0, len_pass = 0;
+	char *ssid_str = NULL, *pass_str = NULL;
+
+	// Get SSID header
+	len_ssid = httpd_req_get_hdr_value_len(req, "my-connect-ssid") + 1;
+	if (len_ssid > 1)
+	{
+		ssid_str = malloc(len_ssid);
+		if (httpd_req_get_hdr_value_str(req, "my-connect-ssid", ssid_str, len_ssid) == ESP_OK)
+		{
+			printf("http_server_wifi_connect_json_handler: Found header => my-connect-ssid: %s\n", ssid_str);
+		}
+	}
+
+	// Get Password header
+	len_pass = httpd_req_get_hdr_value_len(req, "my-connect-pwd") + 1;
+	if (len_pass > 1)
+	{
+		pass_str = malloc(len_pass);
+		if (httpd_req_get_hdr_value_str(req, "my-connect-pwd", pass_str, len_pass) == ESP_OK)
+		{
+			printf("http_server_wifi_connect_json_handler: Found header => my-connect-pwd: %s\n", pass_str);
+		}
+	}
+
+	// Update the Wifi networks configuration and let the wifi application know
+	wifi_config_t* wifi_config = wifi_app_get_wifi_config();
+	memset(wifi_config, 0x00, sizeof(wifi_config_t));
+	memcpy(wifi_config->sta.ssid, ssid_str, len_ssid);
+	memcpy(wifi_config->sta.password, pass_str, len_pass);
+	wifi_app_send_message(eWIFI_APP_MSG_CONNECTING_FROM_HTTP_SERVER);
+
+	free(ssid_str);
+	free(pass_str);
+
+	return ESP_OK;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+/**
+ * @brief		wifiConnectStatus handler updates the connection status for the web page.
+ * 
+ * @param[in]	req	HTTP request for which the uri needs to be handled.
+ * @return 		Error code
+ */
+////////////////////////////////////////////////////////////////////////////////
+static esp_err_t http_server_wifi_connect_status_json_handler(httpd_req_t *req)
+{
+	printf("/wifiConnectStatus requested\n");
+
+	char statusJSON[100];
+
+	sprintf(statusJSON, "{\"wifi_connect_status\":%d}", g_wifi_connect_status);
+
+	httpd_resp_set_type(req, "application/json");
+	httpd_resp_send(req, statusJSON, strlen(statusJSON));
+
+	return ESP_OK;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+/**
+ * @brief 	local Time JSON handler responds by sending the local time.
+ * 
+ * @param	req 	HTTP request for which the uri needs to be handled.
+ * @return 	eRROR CODE
+ */
+////////////////////////////////////////////////////////////////////////////////
+static esp_err_t http_server_get_local_time_json_handler(httpd_req_t *req)
+{
+	printf ("/localTime.json requested\n");
+
+	char localTimeJSON[100] = {0};
+
+	if (g_is_local_time_set)
+	{
+		sprintf(localTimeJSON, "{\"time\":\"%s\"}", sntp_get_time());
+	}
+
+	httpd_resp_set_type(req, "application/json");
+	httpd_resp_send(req, localTimeJSON, strlen(localTimeJSON));
+
+	return ESP_OK;
+}
 
 ////////////////////////////////////////////////////////////////////////////////
 // OTA handlers
@@ -487,6 +610,7 @@ static httpd_handle_t http_server_configure(void)
 				.handler = http_server_index_html_handler,
 				.user_ctx = NULL
 		};
+		printf("pre-entering the HTML handler\n");
 		httpd_register_uri_handler(http_server_handle, &index_html);
 
 		// register app.css handler
@@ -543,6 +667,33 @@ static httpd_handle_t http_server_configure(void)
 				.user_ctx = NULL
 		};
 		httpd_register_uri_handler(http_server_handle, &dht_sensor_json);
+		
+		// register wifiConnect.json handler
+		httpd_uri_t wifi_connect_json = {
+				.uri = "/wifiConnect.json",
+				.method = HTTP_POST,
+				.handler = http_server_wifi_connect_json_handler,
+				.user_ctx = NULL
+		};
+		httpd_register_uri_handler(http_server_handle, &wifi_connect_json);
+
+		// register wifiConnectStatus.json handler
+		httpd_uri_t wifi_connect_status_json = {
+				.uri = "/wifiConnectStatus",
+				.method = HTTP_POST,
+				.handler = http_server_wifi_connect_status_json_handler,
+				.user_ctx = NULL
+		};
+		httpd_register_uri_handler(http_server_handle, &wifi_connect_status_json);
+
+		// register localTime.json handler
+		httpd_uri_t local_time_json = {
+				.uri = "/localTime.json",
+				.method = HTTP_GET,
+				.handler = http_server_get_local_time_json_handler,
+				.user_ctx = NULL
+		};
+		httpd_register_uri_handler(http_server_handle, &local_time_json);
 
 		return http_server_handle;
 	}
