@@ -41,6 +41,8 @@
 #include "mqtt.h"
 #include "../config/mqtt_cert.h"
 
+#include "../../drivers/devices/DHT22/lib/DHT22.h"
+
 ////////////////////////////////////////////////////////////////////////////////
 // Definitions
 ////////////////////////////////////////////////////////////////////////////////
@@ -63,12 +65,15 @@ const uint8_t mqtt_eclipseprojects_io_pem_end[]     asm("_binary_mqtt_eclipsepro
 //  Global container for certificate string.
 const char* gp_mqtt_cert = NULL;
 
+esp_mqtt_client_handle_t client = NULL;
+
 
 ////////////////////////////////////////////////////////////////////////////////
 // Static Function Prototypes
 ////////////////////////////////////////////////////////////////////////////////
 static void mqtt_broker_req     (esp_mqtt_client_handle_t client);
 static void mqtt_event_handler  (void *handler_args, esp_event_base_t base, int32_t event_id, void *event_data);
+static void mqtt_publisher_task (void *p_args);
 
 ////////////////////////////////////////////////////////////////////////////////
 // Static Function Definitions
@@ -113,6 +118,10 @@ static void mqtt_event_handler(void *handler_args, esp_event_base_t base, int32_
         ESP_LOGI(TAG, "MQTT_EVENT_CONNECTED");
         msg_id = esp_mqtt_client_subscribe(client, "nom_ta_test", 0);
 		esp_mqtt_client_publish(client, "nom_ta_test", "Hi to all from ESP32 !!!---!!!", 0, 1, 0);
+
+        // Create publisher task
+        xTaskCreate(&mqtt_publisher_task, "mqtt_publisher_task", MQTT_PUBLISHER_TASK_STACK_SIZE, NULL, MQTT_PUBLISHER_TASK_PRIORITY, NULL);
+
         ESP_LOGI(TAG, "sent subscribe successful, msg_id=%d", msg_id);
         break;
 
@@ -167,6 +176,19 @@ static void mqtt_event_handler(void *handler_args, esp_event_base_t base, int32_
         break;
     }
 }
+
+static void mqtt_publisher_task(void *p_args)
+{
+    while(1)
+    {
+        char pub_msg[50] = "";
+        sprintf(pub_msg, "Temperature: %3.1f\r\nHumidity: %3.1f\r\n", dht22_get_temperature(), dht22_get_humidity());
+        esp_mqtt_client_publish(client, "nom_ta_test", pub_msg, 0, 0, 0);   
+        vTaskDelay(5000 / portTICK_PERIOD_MS);
+    }
+
+    vTaskDelete(NULL);
+}
 ////////////////////////////////////////////////////////////////////////////////
 /**
  *	@} <!-- END GROUP -->
@@ -205,7 +227,7 @@ void mqtt_app_start(void)
     };
 
     // Init of MQTT server
-    esp_mqtt_client_handle_t client = esp_mqtt_client_init(&mqtt_cfg);
+    client = esp_mqtt_client_init(&mqtt_cfg);
 
     esp_mqtt_client_register_event  (client, ESP_EVENT_ANY_ID, mqtt_event_handler, client);
     esp_mqtt_client_start           (client);
