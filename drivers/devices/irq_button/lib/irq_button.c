@@ -15,7 +15,7 @@
 
 ////////////////////////////////////////////////////////////////////////////////
 /**
- *	@addtogroup IRQ_BUTTON__STATIC
+ *	@addtogroup IRQ_BUTTON_STATIC
  *	@{ <!-- BEGIN GROUP -->
  */
 ////////////////////////////////////////////////////////////////////////////////
@@ -30,7 +30,10 @@
 #include "esp_log.h"
 
 #include "../../protocols/mqtt/lib/mqtt.h"
+#include "../../project_config.h"
+
 #include "irq_button.h"
+#include "../config/irq_button_cfg.h"
 
 ////////////////////////////////////////////////////////////////////////////////
 // Definitions
@@ -43,7 +46,6 @@
 ////////////////////////////////////////////////////////////////////////////////
 // Static Global Variables
 ////////////////////////////////////////////////////////////////////////////////
-//static const char TAG[] = "irq_button";
 
 // Semaphore handle
 SemaphoreHandle_t irq_button_semaphore = NULL;
@@ -52,7 +54,9 @@ SemaphoreHandle_t irq_button_semaphore = NULL;
 ////////////////////////////////////////////////////////////////////////////////
 // Static Function Prototypes
 ////////////////////////////////////////////////////////////////////////////////
-
+void 			irq_button_task			(void *pvParam);
+void IRAM_ATTR 	irq_button_isr_handler	(void *arg);
+void 			irq_button_gpio_init	(void);
 
 ////////////////////////////////////////////////////////////////////////////////
 // Static Function Definitions
@@ -86,18 +90,28 @@ void irq_button_task(void *pvParam)
 	{
 		if (xSemaphoreTake(irq_button_semaphore, portMAX_DELAY) ==  pdTRUE)
 		{
-			printf("BUTTON INTERRUPT OCCURRED");
+			printf("BUTTON INTERRUPT OCCURRED\n");
 
-			// WRITE SEPARATE WRAPPER WITHIN CFG FILE FOR A FUNCTION THAT
-			// SENDS A NEW MQTT MESSAGE TO A BROKER... 
+			// Prompt MQTT client to publish the payload
 			mqtt_send_signal_message(eMQTT_SIGNAL_MSG_BUTTON_IT);
 
-			// Few second delay to eliminate button bouncing and sporadic presses-
+			// Second delay to eliminate button bouncing and sporadic presses-
 			vTaskDelay(1000 / portTICK_PERIOD_MS);
 		}
 	}
 }
 
+/**
+ * @brief 	Interrupt button configuration
+ * 
+ * @return	void
+ */
+void irq_button_gpio_init(void)
+{
+	esp_rom_gpio_pad_select_gpio	(IRQ_BUTTON_GPIO);
+	gpio_set_direction				(IRQ_BUTTON_GPIO, GPIO_MODE_INPUT);
+	gpio_set_intr_type				(IRQ_BUTTON_GPIO, GPIO_INTR_NEGEDGE);
+}
 ////////////////////////////////////////////////////////////////////////////////
 /**
  *	@} <!-- END GROUP -->
@@ -127,11 +141,8 @@ void irq_button_config(void)
 	// Create the binary semaphore
 	irq_button_semaphore = xSemaphoreCreateBinary();
 
-	// CREATE SEPARATE STATIC FUNCTION !!!
-	// Button and interrupt configuration
-	esp_rom_gpio_pad_select_gpio(IRQ_BUTTON_GPIO);
-	gpio_set_direction(IRQ_BUTTON_GPIO, GPIO_MODE_INPUT);
-	gpio_set_intr_type(IRQ_BUTTON_GPIO, GPIO_INTR_NEGEDGE);
+	// Initialize button GPIO
+	irq_button_gpio_init();
 
 	// Create the irq button task
 	xTaskCreate(irq_button_task, "irq_button_task", IRQ_BUTTON_TASK_STACK_SIZE, NULL, IRQ_BUTTON_TASK_PRIORITY, NULL);
