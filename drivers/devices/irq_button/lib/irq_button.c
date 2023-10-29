@@ -48,7 +48,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 // Semaphore handle
-SemaphoreHandle_t irq_button_semaphore = NULL;
+SemaphoreHandle_t g_irq_button_semaphore = NULL;
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -73,7 +73,7 @@ void 			irq_button_gpio_init	(void);
 void IRAM_ATTR irq_button_isr_handler(void *arg)
 {
 	// Notify the button task
-	xSemaphoreGiveFromISR(irq_button_semaphore, NULL);
+	xSemaphoreGiveFromISR(g_irq_button_semaphore, NULL);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -88,7 +88,7 @@ void irq_button_task(void *pvParam)
 {
 	while (1)
 	{
-		if (xSemaphoreTake(irq_button_semaphore, portMAX_DELAY) ==  pdTRUE)
+		if (xSemaphoreTake(g_irq_button_semaphore, portMAX_DELAY) ==  pdTRUE)
 		{
 			printf("BUTTON INTERRUPT OCCURRED\n");
 
@@ -139,7 +139,7 @@ void irq_button_gpio_init(void)
 void irq_button_config(void)
 {
 	// Create the binary semaphore
-	irq_button_semaphore = xSemaphoreCreateBinary();
+	g_irq_button_semaphore = xSemaphoreCreateBinary();
 
 	// Initialize button GPIO
 	irq_button_gpio_init();
