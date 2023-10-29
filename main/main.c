@@ -17,6 +17,7 @@
 #include "../protocols/sntp/lib/sntp.h"
 #include "../protocols/mqtt/lib/mqtt.h"
 #include "../drivers/devices/DHT22/lib/DHT22.h"
+#include "../drivers/devices/irq_button/lib/irq_button.h"
 
 
 // proto
@@ -53,6 +54,6 @@ void wifi_connected_event(void)
 {
 	printf("WiFi Application Connected!!");
 	sntp_task_start();
-
 	mqtt_app_start();
+    irq_button_config();
 }

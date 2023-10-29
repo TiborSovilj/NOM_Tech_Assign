@@ -29,9 +29,7 @@
 #include <stddef.h>
 #include <string.h>
 
-#include "esp_wifi.h"
 #include "esp_system.h"
-#include "nvs_flash.h"
 #include "esp_event.h"
 #include "esp_netif.h"
 #include "esp_log.h"
@@ -65,6 +63,10 @@ const uint8_t mqtt_eclipseprojects_io_pem_end[]     asm("_binary_mqtt_eclipsepro
 //  Global container for certificate string.
 const char* gp_mqtt_cert = NULL;
 
+//
+static QueueHandle_t g_mqtt_queue_handle = NULL;
+
+//
 esp_mqtt_client_handle_t client = NULL;
 
 
@@ -74,6 +76,7 @@ esp_mqtt_client_handle_t client = NULL;
 static void mqtt_broker_req     (esp_mqtt_client_handle_t client);
 static void mqtt_event_handler  (void *handler_args, esp_event_base_t base, int32_t event_id, void *event_data);
 static void mqtt_publisher_task (void *p_args);
+static void mqtt_button_publish_task(void *p_args);
 
 ////////////////////////////////////////////////////////////////////////////////
 // Static Function Definitions
@@ -91,6 +94,9 @@ static void mqtt_publisher_task (void *p_args);
 static void mqtt_broker_req(esp_mqtt_client_handle_t client)
 {
     int msg_id = esp_mqtt_client_publish(client, "nom_ta_test", "hello from BROKER", 0, 0, 0);
+    char pub_msg[50] = "";
+    sprintf(pub_msg, "BROKER_SAYS:\nTemperature: %3.1f\r\nHumidity: %3.1f\r\n", dht22_get_temperature(), dht22_get_humidity());
+    esp_mqtt_client_publish(client, "nom_ta_test", pub_msg, 0, 0, 0);   
     ESP_LOGI(TAG, "binary sent with msg_id=%d", msg_id);
 }
 
@@ -121,7 +127,8 @@ static void mqtt_event_handler(void *handler_args, esp_event_base_t base, int32_
 
         // Create publisher task
         xTaskCreate(&mqtt_publisher_task, "mqtt_publisher_task", MQTT_PUBLISHER_TASK_STACK_SIZE, NULL, MQTT_PUBLISHER_TASK_PRIORITY, NULL);
-
+        xTaskCreate(&mqtt_button_publish_task, "mqtt_button_publish_task", MQTT_BUTTON_PUBLISH_TASK_STACK_SIZE, NULL, MQTT_BUTTON_PUBLISH_TASK_PRIORITY, NULL);
+        
         ESP_LOGI(TAG, "sent subscribe successful, msg_id=%d", msg_id);
         break;
 
@@ -177,6 +184,33 @@ static void mqtt_event_handler(void *handler_args, esp_event_base_t base, int32_
     }
 }
 
+static void mqtt_button_publish_task(void *p_args)
+{
+    mqtt_signal_message_t msg;
+
+    while(1)
+    {
+        if (xQueueReceive(g_mqtt_queue_handle, &msg, portMAX_DELAY))
+        {
+            switch(msg.msgID)
+            {
+                case eMQTT_SIGNAL_MSG_BUTTON_IT:
+                    printf("BUTTON PRESSED !!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+                    char pub_msg[50] = "";
+                    sprintf(pub_msg, "Temperature: %3.1f\r\nHumidity: %3.1f\r\n", dht22_get_temperature(), dht22_get_humidity());
+                    esp_mqtt_client_publish(client, "nom_ta_test", pub_msg, 0, 0, 0);   
+                    //vTaskDelay(5000 / portTICK_PERIOD_MS);
+                    break;
+                
+                default:
+                    break;
+            }
+        }       
+    }
+    vTaskDelete(NULL);
+}
+
+
 static void mqtt_publisher_task(void *p_args)
 {
     while(1)
@@ -184,9 +218,8 @@ static void mqtt_publisher_task(void *p_args)
         char pub_msg[50] = "";
         sprintf(pub_msg, "Temperature: %3.1f\r\nHumidity: %3.1f\r\n", dht22_get_temperature(), dht22_get_humidity());
         esp_mqtt_client_publish(client, "nom_ta_test", pub_msg, 0, 0, 0);   
-        vTaskDelay(5000 / portTICK_PERIOD_MS);
+        vTaskDelay(5000 / portTICK_PERIOD_MS);      
     }
-
     vTaskDelete(NULL);
 }
 ////////////////////////////////////////////////////////////////////////////////
@@ -219,6 +252,8 @@ void mqtt_app_start(void)
     // Fetshing the certificate from mqtt_cert.c
     gp_mqtt_cert = mqtt_get_certificate();
 
+    g_mqtt_queue_handle = xQueueCreate(1, sizeof(mqtt_signal_message_t));
+
     esp_mqtt_client_config_t mqtt_cfg = {
 		.broker = {
         	.address.uri = "mqtts://test.mosquitto.org:8883",
@@ -231,6 +266,16 @@ void mqtt_app_start(void)
 
     esp_mqtt_client_register_event  (client, ESP_EVENT_ANY_ID, mqtt_event_handler, client);
     esp_mqtt_client_start           (client);
+}
+
+
+
+BaseType_t  mqtt_send_signal_message(mqtt_signal_message_e msgID)
+{
+    mqtt_signal_message_t msg;
+	msg.msgID = msgID;
+
+	return xQueueSend(g_mqtt_queue_handle, &msg, portMAX_DELAY);
 }
 ////////////////////////////////////////////////////////////////////////////////
 /**
