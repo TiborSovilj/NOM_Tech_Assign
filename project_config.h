@@ -45,6 +45,11 @@
 #define DHT22_TASK_STACK_SIZE	                ( 4096 )
 #define DHT22_TASK_PRIORITY		                ( 5 )
 
+#define SNTP_TASK_STACK_SIZE	                ( 4096 )
+#define SNTP_TASK_PRIORITY		                ( 4 )
+
+
+
 ////////////////////////////////////////////////////////////////////////////////
 // PROJECT Typedefs
 ////////////////////////////////////////////////////////////////////////////////
