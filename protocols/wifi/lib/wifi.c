@@ -49,23 +49,27 @@
 ////////////////////////////////////////////////////////////////////////////////
 // Static Global Variables
 ////////////////////////////////////////////////////////////////////////////////
-//
-wifi_config_t* wifi_config = NULL;
 
-// 
-static int g_retry_number;
+// ESP loggging tag
+static const char* gp_wifi_app_tag = "WIFI_APP";
+
+// Global carrier for wifi configuraion paramaeters
+static wifi_config_t* gp_wifi_app_wifi_config = NULL;
+
+// Number of retries of connecting wifi
+static int g_wifi_app_retry_number;
 
 // Queue handler for the WiFi app
 static QueueHandle_t g_wifi_app_queue_handle = NULL;
 
 // Global carrier for events logging table
-static const wifi_app_events_log_t* g_wifi_app_events_table;
+static const wifi_app_events_log_t* gp_wifi_app_events_table;
 
 // Global carrier for queue message table
-static const wifi_app_queue_message_t* g_wifi_app_queue_msg;
+static const wifi_app_queue_message_t* gp_wifi_app_queue_msg;
 
 // Callback for wifi connected event
-static wifi_connected_event_callback_t wifi_connected_event_callback;
+static wifi_connected_event_callback_t g_wifi_connected_event_callback;
 
 // Extern esp-netif container for default station init
 esp_netif_t *esp_netif_sta = NULL;
@@ -114,7 +118,7 @@ static void wifi_app_connect_sta(void)
 static void wifi_app_task(void *p_arg)
 {
 	wifi_app_queue_message_t msg;
-   	g_wifi_app_queue_msg = wifi_app_get_queue_message();
+   	gp_wifi_app_queue_msg = wifi_app_get_queue_message();
 	
 	wifi_app_event_handler_init();		// Initialize the event handler
     
@@ -124,54 +128,54 @@ static void wifi_app_task(void *p_arg)
 	
 	ESP_ERROR_CHECK(esp_wifi_start());	// Start WiFi
 
+    ESP_LOGI(gp_wifi_app_tag,"WIFI STARTED SUCCESSFULLY");
+
 	// Send first event message
 	wifi_app_send_message(eWIFI_APP_MSG_START_HTTP_SERVER);
-
-    printf("FINISHED: esp_wifi_start()\n\n");
 
     while(1)
 	{
 		if (xQueueReceive(g_wifi_app_queue_handle, &msg, portMAX_DELAY))
 		{
-			// TODO:  test when HTTP is implemented, if successfull -> delete switch statement
-			// printf ("%s", g_wifi_app_queue_msg[msg.msgID].msgContent);
-			
+				
 			switch (msg.msgID)
 			{
 				case eWIFI_APP_MSG_START_HTTP_SERVER:
-					printf("WIFI_APP_MSG_START_HTTP_SERVER\n\n");
+					ESP_LOGI(gp_wifi_app_tag,"WIFI_APP_MSG_START_HTTP_SERVER");
+
 					http_server_start();
+
 					break;
 
 				case eWIFI_APP_MSG_CONNECTING_FROM_HTTP_SERVER:
-					printf("WIFI_APP_MSG_CONNECTING_FROM_HTTP_SERVER\n\n");
+					ESP_LOGI(gp_wifi_app_tag,"WIFI_APP_MSG_CONNECTING_FROM_HTTP_SERVER");
 
 					wifi_app_connect_sta();
-					g_retry_number = 0;
+					g_wifi_app_retry_number = 0;
 					http_server_monitor_send_message(HTTP_MSG_WIFI_CONNECT_INIT);
-
 					
 					break;
 
 				case eWIFI_APP_MSG_STA_CONNECTED_GOT_IP:
-					printf("WIFI_APP_MSG_STA_CONNECTED_GOT_IP\n\n");
+					ESP_LOGI(gp_wifi_app_tag,"WIFI_APP_MSG_STA_CONNECTED_GOT_IP");
 
 					http_server_monitor_send_message(HTTP_MSG_WIFI_CONNECT_SUCCESS);
-					if(wifi_connected_event_callback)
+					if(g_wifi_connected_event_callback)
 					{
 						wifi_app_call_callback();
 					}
+
 					break;
 
 				case eWIFI_APP_MSG_STA_DISCONNECTED:
-					printf("WIFI_APP_MSG_STA_DISCONNECTED\n\n");
+					ESP_LOGI(gp_wifi_app_tag,"WIFI_APP_MSG_STA_DISCONNECTED");
 
 					http_server_monitor_send_message(HTTP_MSG_WIFI_CONNECT_FAIL);
 
 					break;
 
 				default:
-					printf("DEFAULT QUEUE MSG");
+					printf("___DEFAULT QUEUE MSG___");
 					break;
 			}
 		}
@@ -198,7 +202,7 @@ static void wifi_app_event_handler_init(void)
 	ESP_ERROR_CHECK(esp_event_handler_instance_register(WIFI_EVENT, ESP_EVENT_ANY_ID, &wifi_app_event_handler, NULL, &instance_wifi_event));
 	ESP_ERROR_CHECK(esp_event_handler_instance_register(IP_EVENT, ESP_EVENT_ANY_ID, &wifi_app_event_handler, NULL, &instance_ip_event));
 
-	printf("FINISHED: wifi event handler init\n\n");
+	ESP_LOGI(gp_wifi_app_tag,"FINISHED: WiFi Event Handler INIT");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -218,14 +222,14 @@ static void wifi_app_event_handler(void *arg, esp_event_base_t event_base, int32
 {
 	if (event_base == WIFI_EVENT)
 	{
-		printf ("%s", g_wifi_app_events_table[event_id].eventMsg);
+		ESP_LOGI(gp_wifi_app_tag, "%s", gp_wifi_app_events_table[event_id].eventMsg);
 
 		if (event_id == WIFI_EVENT_STA_DISCONNECTED)
 		{
-				if (g_retry_number < MAX_CONNECTION_RETRIES)
+				if (g_wifi_app_retry_number < MAX_CONNECTION_RETRIES)
 				{
 					esp_wifi_connect();
-					g_retry_number++;
+					g_wifi_app_retry_number++;
 				}
 				else
 				{
@@ -235,13 +239,10 @@ static void wifi_app_event_handler(void *arg, esp_event_base_t event_base, int32
 	}
 	else if (event_base == IP_EVENT)
 	{
-		// TODO: test if same approach works with STA mode only, then delete if statements, leave just print/log
-		// printf ("%s", g_wifi_app_events_table[event_id].eventMsg);
-
 		switch (event_id)
 		{
 			case IP_EVENT_STA_GOT_IP:
-				printf("IP_EVENT_STA_GOT_IP\n\n");
+				ESP_LOGI(gp_wifi_app_tag,"IP_EVENT_STA_GOT_IP");
 
 				wifi_app_send_message(eWIFI_APP_MSG_STA_CONNECTED_GOT_IP);
 
@@ -271,7 +272,7 @@ static void wifi_app_default_wifi_init(void)
 	esp_netif_sta = esp_netif_create_default_wifi_sta();
 	esp_netif_ap  = esp_netif_create_default_wifi_ap();
 
-	printf("FINISHED: default wifi init\n\n");
+	ESP_LOGI(gp_wifi_app_tag, "FINISHED: Default WiFi INIT");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -320,7 +321,7 @@ static void wifi_app_soft_ap_config(void)
 	ESP_ERROR_CHECK(esp_wifi_set_bandwidth(WIFI_IF_AP, WIFI_AP_BANDWIDTH));		//  Setting BW and power saving mode
 	ESP_ERROR_CHECK(esp_wifi_set_ps(WIFI_STA_POWER_SAVE));			
 
-	printf("FINISHED: softAP init\n\n");			
+	ESP_LOGI(gp_wifi_app_tag, "FINISHED: SoftAP INIT");			
 }
 
 
@@ -350,13 +351,13 @@ static void wifi_app_soft_ap_config(void)
 ////////////////////////////////////////////////////////////////////////////////
 void wifi_app_start(void)
 {
-    printf ("__WIFI_APP_START__\n\n");
+    ESP_LOGI(gp_wifi_app_tag,"____WIFI_APP_START____");
 
-	g_wifi_app_events_table = wifi_app_get_events_table();
+	gp_wifi_app_events_table = wifi_app_get_events_table();
 
 	// emory allocation for the wifi sonfiguration
-	wifi_config = (wifi_config_t*)malloc(sizeof(wifi_config_t));
-	memset(wifi_config, 0x00, sizeof(wifi_config_t));
+	gp_wifi_app_wifi_config = (wifi_config_t*)malloc(sizeof(wifi_config_t));
+	memset(gp_wifi_app_wifi_config, 0x00, sizeof(wifi_config_t));
 
     // Create message queue
     g_wifi_app_queue_handle = xQueueCreate(eWIFI_APP_MSG_NUM_OF, sizeof(wifi_app_queue_message_t));
@@ -391,7 +392,7 @@ BaseType_t  wifi_app_send_message(wifi_app_message_e msgID)
 ////////////////////////////////////////////////////////////////////////////////
 wifi_config_t*  wifi_app_get_wifi_config(void)
 {
-	return wifi_config;
+	return gp_wifi_app_wifi_config;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -404,7 +405,7 @@ wifi_config_t*  wifi_app_get_wifi_config(void)
 ////////////////////////////////////////////////////////////////////////////////
 void wifi_app_set_callback (wifi_connected_event_callback_t callback)
 {
-	wifi_connected_event_callback = callback;
+	g_wifi_connected_event_callback = callback;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -416,7 +417,7 @@ void wifi_app_set_callback (wifi_connected_event_callback_t callback)
 ////////////////////////////////////////////////////////////////////////////////
 void wifi_app_call_callback (void)
 {
-	wifi_connected_event_callback();
+	g_wifi_connected_event_callback();
 }
 
 ////////////////////////////////////////////////////////////////////////////////

@@ -36,13 +36,13 @@
 // Configuration table for events logging
 static const wifi_app_events_log_t g_wifi_app_events_table[] = 
 {
-    [ WIFI_EVENT_AP_START           ] = {.eventMsg = "WIFI_EVENT_AP_START\n\n"           },
-    [ WIFI_EVENT_AP_STOP            ] = {.eventMsg = "WIFI_EVENT_AP_STOP\n\n"            },
-    [ WIFI_EVENT_AP_STACONNECTED    ] = {.eventMsg = "WIFI_EVENT_AP_STACONNECTED\n\n"    },
-    [ WIFI_EVENT_AP_STADISCONNECTED ] = {.eventMsg = "WIFI_EVENT_AP_STADISCONNECTED\n\n" },
-    [ WIFI_EVENT_STA_START          ] = {.eventMsg = "WIFI_EVENT_STA_START\n\n"          },
-    [ WIFI_EVENT_STA_CONNECTED      ] = {.eventMsg = "WIFI_EVENT_STA_CONNECTED\n\n"      },
-    [ WIFI_EVENT_STA_DISCONNECTED   ] = {.eventMsg = "WIFI_EVENT_STA_DISCONNECTED\n\n"   },
+    [ WIFI_EVENT_AP_START           ] = {.eventMsg = "WIFI_EVENT_AP_START"           },
+    [ WIFI_EVENT_AP_STOP            ] = {.eventMsg = "WIFI_EVENT_AP_STOP"            },
+    [ WIFI_EVENT_AP_STACONNECTED    ] = {.eventMsg = "WIFI_EVENT_AP_STACONNECTED"    },
+    [ WIFI_EVENT_AP_STADISCONNECTED ] = {.eventMsg = "WIFI_EVENT_AP_STADISCONNECTED" },
+    [ WIFI_EVENT_STA_START          ] = {.eventMsg = "WIFI_EVENT_STA_START"          },
+    [ WIFI_EVENT_STA_CONNECTED      ] = {.eventMsg = "WIFI_EVENT_STA_CONNECTED"      },
+    [ WIFI_EVENT_STA_DISCONNECTED   ] = {.eventMsg = "WIFI_EVENT_STA_DISCONNECTED"   },
 //    [ IP_EVENT_STA_GOT_IP           ] = {.eventMsg = "IP_EVENT_STA_GOT_IP\n\n"           }
 };
 

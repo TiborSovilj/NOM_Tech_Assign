@@ -48,15 +48,15 @@ void mqtt_get_payload_string(char* payload, mqtt_opmode_e opmode)
     switch (opmode)
     {
         case eMQTT_OPERATION_DHT22_INTERVAL_5S:
-            sprintf(payload, "INTERVAL_5S\nTemperature: %3.1f\r\nHumidity: %3.1f\r\n", dht22_get_temperature(), dht22_get_humidity());
+            sprintf(payload, "\nINTERVAL_5S\nTemperature: %3.1f\r\nHumidity: %3.1f\r\n", dht22_get_temperature(), dht22_get_humidity());
             break;
 
         case eMQTT_OPERATION_DHT22_BUTTON_INTERRUPT:
-        sprintf(payload, "BUTTON_IT\nTemperature: %3.1f\r\nHumidity: %3.1f\r\n", dht22_get_temperature(), dht22_get_humidity());
+        sprintf(payload, "\nBUTTON_IT\nTemperature: %3.1f\r\nHumidity: %3.1f\r\n", dht22_get_temperature(), dht22_get_humidity());
             break;
 
         case eMQTT_OPERATION_DHT22_BROKER_REQUEST:
-        sprintf(payload, "BROKER_REQ\nTemperature: %3.1f\r\nHumidity: %3.1f\r\n", dht22_get_temperature(), dht22_get_humidity());
+        sprintf(payload, "\nBROKER_REQ\nTemperature: %3.1f\r\nHumidity: %3.1f\r\n", dht22_get_temperature(), dht22_get_humidity());
             break;
         
         default:
