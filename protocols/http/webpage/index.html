@@ -13,50 +13,56 @@
 	<header>
 		<h1>Technical Assignment NOMNIO d.o.o.</h1>
 	</header>
-		
-	<div class="section_container" id="OTA">
-	<h2 class="section_header">ESP32 Firmware Update</h2>
-		<label id="latest_firmware_label">LATEST FIRMWARE: </label>
-		<div id="latest_firmware"></div> 
-		<input type="file" id="selected_file" accept=".bin" style="display: none;" onchange="getFileInfo()" />
-		<div class="buttons">
-			<input type="button" value="Select File" onclick="document.getElementById('selected_file').click();" />
-			<input type="button" value="Update Firmware" onclick="updateFirmware()" />
-		</div>
-		<h4 id="file_info">FILE_INFO</h4>	
-		<h4 id="ota_update_status">UPDATE_STATUS</h4>
-	</div>
-		
-	<div class="section_container" id="DHT22Sensor">
-		<h2 class="section_header">DHT22 Sensor Readings</h2>
-		<div class="inline-container">
-			<label for="temperature_reading">Temperature:</label>
-			<div id="temperature_reading">0.0</div> 
-		</div>
-		<div class="inline-container">
-			<label for="humidity_reading">Humidity: </label>
-			<div id="humidity_reading">0.0</div>
-		</div>
-	</div>
+	
+	<div class="grid-container">
 
-	<div class="section_container" id="WiFiConnect">
-		<h2 class="section_header">ESP32 WiFi Connect</h2>
-		<section>
-			<input id="connect_ssid" type="text" maxlength="32" placeholder="SSID" value="">
-			<input id="connect_pass" type="password" maxlength="64" placeholder="Password" value="">
-			<input type="checkbox" onclick="showPassword()">Show Password
-		</section>
-		<div class="buttons">
-			<input id="connect_wifi" type="button" value="Connect" />
+		<div class="section_container" id="OTA">
+		<h2 class="section_header">ESP32 Firmware Update</h2>
+			<label id="latest_firmware_label">LATEST FIRMWARE: </label>
+			<div id="latest_firmware"></div> 
+			<input type="file" id="selected_file" accept=".bin" style="display: none;" onchange="getFileInfo()" />
+			<div class="buttons">
+				<input type="button" value="Select File" onclick="document.getElementById('selected_file').click();" />
+				<input type="button" value="Update Firmware" onclick="updateFirmware()" />
+			</div>
+			<h4 id="file_info">FILE_INFO</h4>	
+			<h4 id="ota_update_status">UPDATE_STATUS</h4>
 		</div>
-		<div id="wifi_connect_credentials_errors"></div>
-		<h4 id="wifi_connect_status"></h4>
-	</div>
-		
-	<div class="section_container" id="LocalTime">
-		<h2 class="section_header">SNTP Time Synchronization</h2>
-		<label id="sntp_status" for="local_time">Connect to WiFi for Local Time: </label>
-		<div id="local_time"></div>
+
+		<div class="section_container" id="DHT22Sensor">
+			<h2 class="section_header">DHT22 Sensor Readings</h2>
+			<div class="inline-container">
+				<label for="temperature_reading">Temperature:</label>
+				<div id="temperature_reading">0.0</div> 
+			</div>
+			<div class="inline-container">
+				<label for="humidity_reading">Humidity: </label>
+				<div id="humidity_reading">0.0</div>
+			</div>
+		</div>
+
+		<div class="section_container" id="WiFiConnect">
+			<h2 class="section_header">ESP32 WiFi Connect</h2>
+			<section>
+				<label for="connect_ssid">SSID:</label>
+				<input id="connect_ssid" type="text" maxlength="32" placeholder="SSID" value="Juice'n'Charger">
+				<label for="connect_pass">Password:</label>
+				<input id="connect_pass" type="password" maxlength="64" placeholder="Password" value="tiramisuDugave#2023;">
+				<input type="checkbox" onclick="showPassword()">Show Password
+			</section>
+			<div class="buttons">
+				<input id="connect_wifi" type="button" value="Connect" />
+			</div>
+			<div id="wifi_connect_credentials_errors"></div>
+			<h4 id="wifi_connect_status"></h4>
+		</div>
+
+		<div class="section_container" id="LocalTime">
+			<h2 class="section_header">SNTP Time Synchronization</h2>
+			<label id="sntp_status" for="local_time">Connect to WiFi for Local Time: </label>
+			<div id="local_time"></div>
+		</div>
+
 	</div>
 
 	</body>
