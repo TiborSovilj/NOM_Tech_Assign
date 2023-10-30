@@ -7,7 +7,7 @@
  *	@file		irq_button_cfg.h
  *	@author   	Tibor Sovilj
  *	@date		12.10.2023
- *	@version	V0.0.1
+ *	@version	V1.0.0
 
  *	@brief 		Configuration Header file for the interrupt button.
  */

@@ -7,7 +7,7 @@
  *	@file		mqtt_cert.c
  *	@author   	Tibor Sovilj
  *	@date		26.10.2023
- *	@version	V0.0.1
+ *	@version	V1.0.0
 
  *	@brief 		Source file for MQTT TLS certificate. File contains definition
                 for getter function that provides mqtt lib with certificate

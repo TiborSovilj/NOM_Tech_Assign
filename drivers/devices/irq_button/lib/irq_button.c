@@ -7,7 +7,7 @@
  *	@file		irq_button.c
  *	@author   	Tibor Sovilj
  *	@date		25.10.2023
- *	@version	V0.0.1
+ *	@version	V1.0.0
 
  *	@brief 		Source file for the interrupt user button.  
  */

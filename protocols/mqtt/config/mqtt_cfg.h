@@ -7,7 +7,7 @@
  *	@file		mqtt_cfg.h
  *	@author   	Tibor Sovilj
  *	@date		28.10.2023
- *	@version	V0.0.1
+ *	@version	V1.0.0
 
  *	@brief 		Configuration Header file for the MQTT protocol.
  */
