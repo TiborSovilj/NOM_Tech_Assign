@@ -33,8 +33,10 @@
 #include "freertos/task.h"
 
 #include "driver/gpio.h"
+#include "../../project_config.h"
 
 #include "DHT22.h"
+#include "../config/DHT22_cfg.h"
 
 ////////////////////////////////////////////////////////////////////////////////
 // Definitions
@@ -56,6 +58,8 @@ static float g_dht22_humidity 		= 0.0f;
 // Temperature value
 static float g_dht22_temperature 	= 0.0f;
 
+// 
+static const char* gp_dht22_tag = "DHT22";
 
 ////////////////////////////////////////////////////////////////////////////////
 // Static Function Prototypes
@@ -84,9 +88,9 @@ static dht22_status_e 	dht22_read_register		(void);
 ////////////////////////////////////////////////////////////////////////////////
 static void dht22_task(void *p_arg)
 {
-	printf("Starting DHT task\n\n");
+	ESP_LOGI(gp_dht22_tag, "Starting DHT task");
 
-	for (;;)
+	while(1)
 	{
 		dht22_errorHandler(dht22_read_register());
 
@@ -109,18 +113,18 @@ static void dht22_errorHandler(dht22_status_e status)
 	switch(status) {
 	
 		case eDHT22_TIMEOUT_ERROR :
-			printf("Sensor Timeout\n");
+			ESP_LOGI(gp_dht22_tag,"Sensor Timeout");
 			break;
 
 		case eDHT22_CHECKSUM_ERROR:
-			printf("CheckSum error\n");
+			ESP_LOGI(gp_dht22_tag,"CheckSum error");
 			break;
 
 		case eDHT22_OK:
 			break;
 
 		default :
-			printf("Unknown error\n" );
+			ESP_LOGI(gp_dht22_tag, "Unknown error");
 	}
 }
 

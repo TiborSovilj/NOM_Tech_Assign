@@ -24,13 +24,17 @@
 // Includes
 ////////////////////////////////////////////////////////////////////////////////
 #include <stdio.h>
+
 #include "esp_log.h"
-#include "freertos/FreeRTOS.h"
-#include "freertos/task.h"
 #include "lwip/apps/sntp.h"
 
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
+
+#include "../../project_config.h"
 #include "../../wifi/lib/wifi.h"
 #include "../../http/lib/http_server.h"
+#include "../config/sntp_cfg.h"
 #include "sntp.h"
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -44,14 +48,20 @@
 ////////////////////////////////////////////////////////////////////////////////
 // Static Global Variables
 ////////////////////////////////////////////////////////////////////////////////
-static bool sntp_op_mode_set = false;
+
+// Flag for detecting if SNTP operation mode is set
+static bool g_sntp_op_mode_set = false;
+
+// Global carrier of configuration parameters
+static sntp_config_t* gp_sntp_config_table = NULL;
+
 
 ////////////////////////////////////////////////////////////////////////////////
 // Static Function Prototypes
 ////////////////////////////////////////////////////////////////////////////////
-static void sntp_time_sync_task(void *pvParam);
-static void sntp_obtain_time(void);
-static void sntp_init_sntp(void);
+static void sntp_time_sync_task	(void *pvParam);
+static void sntp_obtain_time	(void);
+static void sntp_init_sntp		(void);
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -63,7 +73,7 @@ static void sntp_init_sntp(void);
  * @brief       The SNTP time synchronization task.
  * 
  * @param[in]   arg pvParam.
- * @return       void
+ * @return      void
  */
 ////////////////////////////////////////////////////////////////////////////////
 static void sntp_time_sync_task(void *pvParam)
@@ -71,7 +81,7 @@ static void sntp_time_sync_task(void *pvParam)
 	while (1)
 	{
 		sntp_obtain_time();
-		vTaskDelay(10000 / portTICK_PERIOD_MS);
+		vTaskDelay(gp_sntp_config_table->obtainPeriod / portTICK_PERIOD_MS);
 	}
 
 	vTaskDelete(NULL);
@@ -82,7 +92,7 @@ static void sntp_time_sync_task(void *pvParam)
  * @brief   Gets the current time and if the current time is not up to date,
  *          the sntp_time_synch_init_sntp function is called.
  * 
- * @return void
+ * @return 	void
  */
 ////////////////////////////////////////////////////////////////////////////////
 static void sntp_obtain_time(void)
@@ -94,13 +104,13 @@ static void sntp_obtain_time(void)
 	localtime_r(&now, &time_info);
 
 	// Check the time, in case we need to initialize/reinitialize
-	if (time_info.tm_year < (2016 - 1900))
+	if (time_info.tm_year < (gp_sntp_config_table->curentYear - 1900))
 	{
 		sntp_init_sntp();
 
 		// Setting the local time zone as enviromental variable
         // SOURCE: https://github.com/nayarsystems/posix_tz_db/blob/master/zones.csv
-		setenv("TZ", "CET-1CEST,M3.5.0,M10.5.0/3", 1);
+		setenv("TZ", gp_sntp_config_table->timeZone, 1);
 		tzset();
 	}
 }
@@ -116,14 +126,14 @@ static void sntp_init_sntp(void)
 {
 	printf("Initializing the SNTP service\n");
 
-	if (!sntp_op_mode_set)
+	if (!g_sntp_op_mode_set)
 	{
 		// Set the operating mode
-		sntp_setoperatingmode(SNTP_OPMODE_POLL);
-		sntp_op_mode_set = true;
+		sntp_setoperatingmode(gp_sntp_config_table->opMode);
+		g_sntp_op_mode_set = true;
 	}
 
-	sntp_setservername(0, "pool.ntp.org");
+	sntp_setservername(0, gp_sntp_config_table->serverName);
 
 	// Initialize the servers
 	sntp_init();
@@ -158,6 +168,9 @@ static void sntp_init_sntp(void)
 ////////////////////////////////////////////////////////////////////////////////
 void sntp_task_start (void)
 {
+	// call table
+	gp_sntp_config_table = sntp_get_config();
+
     xTaskCreate(&sntp_time_sync_task, "sntp_time_sync_task", SNTP_TASK_STACK_SIZE, NULL, SNTP_TASK_PRIORITY, NULL);
 }
 
@@ -178,7 +191,7 @@ char* sntp_get_time (void)
 	time(&now);
 	localtime_r(&now, &time_info);
 
-	if (time_info.tm_year < (2016 - 1900))
+	if (time_info.tm_year < (gp_sntp_config_table->curentYear - 1900))
 	{
 		printf("Time is not set yet\n");
 	}
@@ -190,6 +203,7 @@ char* sntp_get_time (void)
 
 	return time_buffer;
 }
+
 
 ////////////////////////////////////////////////////////////////////////////////
 /**

@@ -47,6 +47,11 @@
 // Static Global Variables
 ////////////////////////////////////////////////////////////////////////////////
 
+// ESP loggging tags
+static const char* gp_http_server_tag 			= "HTTP_SERVER";
+static const char* gp_http_server_ota_tag 		= "HTTP_SERVER_OTA";
+static const char* gp_http_server_webpage_tag 	= "HTTP_SERVER_WEBPAGE";
+
 // Wifi connect status
 static int g_wifi_connect_status = NONE;
 
@@ -57,7 +62,7 @@ static int g_fw_update_status = OTA_UPDATE_PENDING;
 static httpd_handle_t http_server_handle = NULL;
 
 // HTTP server monitor task handle
-static TaskHandle_t task_http_server_monitor = NULL;
+static TaskHandle_t g_task_http_server_monitor = NULL;
 
 // Queue handle used to manipulate the main queue of events
 static QueueHandle_t http_server_monitor_queue_handle;
@@ -98,14 +103,19 @@ static httpd_handle_t http_server_configure(void);
 // Static Function Definitions
 ////////////////////////////////////////////////////////////////////////////////
 
+////////////////////////////////////////////////////////////////////////////////
 /**
- * Checks the g_fw_update_status and creates the fw_update_reset timer if g_fw_update_status is true.
+ * @brief 	Checks the g_fw_update_status and creates the fw_update_reset timer 
+ * 			if g_fw_update_status is true.
+ * 
+ * @return 	void 
  */
+////////////////////////////////////////////////////////////////////////////////
 static void http_server_fw_update_reset_timer(void)
 {
 	if (g_fw_update_status == OTA_UPDATE_SUCCESSFUL)
 	{
-		printf("http_server_fw_update_reset_timer: FW updated successful starting FW update reset timer\n");
+		ESP_LOGI(gp_http_server_ota_tag, "FW updated SUCCESSFULLY. Starting FW update reset timer");
 
 		// Give the web page a chance to receive an acknowledge back and initialize the timer
 		ESP_ERROR_CHECK(esp_timer_create(&fw_update_reset_args, &fw_update_reset));
@@ -113,7 +123,7 @@ static void http_server_fw_update_reset_timer(void)
 	}
 	else
 	{
-		printf("http_server_fw_update_reset_timer: FW update unsuccessful\n");
+		ESP_LOGI(gp_http_server_ota_tag, "FW update FAILED.");
 	}
 }
 
@@ -122,35 +132,36 @@ static void http_server_fw_update_reset_timer(void)
  * @brief		HTTP server monitor task used to track events of the HTTP server
  * 
  * @param[in] 	pvParameters 	Parameter which can be passed to the task.
+ * @return		void
  */
 ////////////////////////////////////////////////////////////////////////////////
 static void http_server_monitor(void *parameter)
 {
 	http_server_queue_message_t msg;
 
-	for (;;)
+	while(1)
 	{
 		if (xQueueReceive(http_server_monitor_queue_handle, &msg, portMAX_DELAY))
 		{
 			switch (msg.msgID)
 			{
 				case HTTP_MSG_WIFI_CONNECT_INIT:
-					printf("HTTP_MSG_WIFI_CONNECT_INIT\n");
+					ESP_LOGI(gp_http_server_tag, "HTTP_MSG_WIFI_CONNECT_INIT");
 					g_wifi_connect_status = HTTP_WIFI_STATUS_CONNECTING;
 					break;
 
 				case HTTP_MSG_WIFI_CONNECT_SUCCESS:
-					printf("HTTP_MSG_WIFI_CONNECT_SUCCESS\n");
+					ESP_LOGI(gp_http_server_tag, "HTTP_MSG_WIFI_CONNECT_SUCCESS");
 					g_wifi_connect_status = HTTP_WIFI_STATUS_CONNECT_SUCCESS;
 					break;
 
 				case HTTP_MSG_WIFI_CONNECT_FAIL:
-					printf("HTTP_MSG_WIFI_CONNECT_FAIL\n");
+					ESP_LOGI(gp_http_server_tag, "HTTP_MSG_WIFI_CONNECT_FAIL");
 					g_wifi_connect_status = HTTP_WIFI_STATUS_CONNECT_FAILED;
 					break;
 
 				case HTTP_MSG_OTA_UPDATE_SUCCESSFUL:
-					printf("HTTP_MSG_OTA_UPDATE_SUCCESSFUL\n");
+					ESP_LOGI(gp_http_server_tag, "HTTP_MSG_OTA_UPDATE_SUCCESSFUL");
 
 					g_fw_update_status = OTA_UPDATE_SUCCESSFUL;
 					http_server_fw_update_reset_timer();
@@ -158,21 +169,21 @@ static void http_server_monitor(void *parameter)
 					break;
 
 				case HTTP_MSG_OTA_UPDATE_FAILED:
-					printf("HTTP_MSG_OTA_UPDATE_FAILED\n");
+					ESP_LOGI(gp_http_server_ota_tag, "HTTP_MSG_OTA_UPDATE_FAILED");
 
 					g_fw_update_status = OTA_UPDATE_FAILED;
 
 					break;
 				
 				case HTTP_MSG_OTA_UPATE_INITIALIZED:
-					printf("HTTP_MSG_OTA_UPDATE_INITIALIZED\n");
+					ESP_LOGI(gp_http_server_ota_tag, "HTTP_MSG_OTA_UPDATE_INITIALIZED");
 
 					g_fw_update_status = OTA_UPDATE_FAILED;
 
 					break;
 
 				case HTTP_MSG_TIME_SERVICE_INITIALIZED:
-					printf("HTTP_MSG_TIME_SERVICE_INITIALIZED");
+					ESP_LOGI(gp_http_server_tag, "HTTP_MSG_TIME_SERVICE_INITIALIZED");
 					g_is_local_time_set = true;
 
 					break;
@@ -199,7 +210,7 @@ static void http_server_monitor(void *parameter)
 ////////////////////////////////////////////////////////////////////////////////
 static esp_err_t http_server_jquery_handler(httpd_req_t *req)
 {
-	printf("Jquery requested\n");
+	ESP_LOGI(gp_http_server_webpage_tag, "Jquery requested");
 
 	httpd_resp_set_type(req, "application/javascript");
 	httpd_resp_send(req, (const char *)jquery_3_3_1_min_js_start, jquery_3_3_1_min_js_end - jquery_3_3_1_min_js_start);
@@ -217,7 +228,7 @@ static esp_err_t http_server_jquery_handler(httpd_req_t *req)
 ////////////////////////////////////////////////////////////////////////////////
 static esp_err_t http_server_index_html_handler(httpd_req_t *req)
 {
-	printf("index.html requested\n");
+	ESP_LOGI(gp_http_server_webpage_tag, "index.html requested");
 
 	httpd_resp_set_type(req, "text/html");
 	httpd_resp_send(req, (const char *)index_html_start, index_html_end - index_html_start);
@@ -235,7 +246,7 @@ static esp_err_t http_server_index_html_handler(httpd_req_t *req)
 ////////////////////////////////////////////////////////////////////////////////
 static esp_err_t http_server_app_css_handler(httpd_req_t *req)
 {
-	printf("app.css requested\n");
+	ESP_LOGI(gp_http_server_webpage_tag, "app.css requested");
 
 	httpd_resp_set_type(req, "text/css");
 	httpd_resp_send(req, (const char *)app_css_start, app_css_end - app_css_start);
@@ -253,7 +264,7 @@ static esp_err_t http_server_app_css_handler(httpd_req_t *req)
 ////////////////////////////////////////////////////////////////////////////////
 static esp_err_t http_server_app_js_handler(httpd_req_t *req)
 {
-	printf("app.js requested\n");
+	ESP_LOGI(gp_http_server_webpage_tag, "app.js requested");
 
 	httpd_resp_set_type(req, "application/javascript");
 	httpd_resp_send(req, (const char *)app_js_start, app_js_end - app_js_start);
@@ -271,7 +282,7 @@ static esp_err_t http_server_app_js_handler(httpd_req_t *req)
 ////////////////////////////////////////////////////////////////////////////////
 static esp_err_t http_server_favicon_ico_handler(httpd_req_t *req)
 {
-	printf("favicon.ico requested\n");
+	ESP_LOGI(gp_http_server_webpage_tag, "favicon.ico requested");
 
 	httpd_resp_set_type(req, "image/x-icon");
 	httpd_resp_send(req, (const char *)favicon_ico_start, favicon_ico_end - favicon_ico_start);
@@ -290,7 +301,7 @@ static esp_err_t http_server_favicon_ico_handler(httpd_req_t *req)
 ////////////////////////////////////////////////////////////////////////////////
 static esp_err_t http_server_get_dht_sensor_readings_json_handler(httpd_req_t *req)
 {
-	printf("/dhtSensor.json requested\n");
+	ESP_LOGI(gp_http_server_webpage_tag, "dhtSensor.json requested");
 
 	char dhtSensorJSON[100];
 
@@ -314,10 +325,12 @@ static esp_err_t http_server_get_dht_sensor_readings_json_handler(httpd_req_t *r
 ////////////////////////////////////////////////////////////////////////////////
 static esp_err_t http_server_wifi_connect_json_handler(httpd_req_t *req)
 {
-	printf("/wifiConnect.json requested\n");
+	ESP_LOGI(gp_http_server_webpage_tag, "wifiConnect.json requested");
 
-	size_t len_ssid = 0, len_pass = 0;
-	char *ssid_str = NULL, *pass_str = NULL;
+	size_t 	len_ssid = 0;
+	size_t 	len_pass = 0;
+	char* 	ssid_str = NULL;
+	char* 	pass_str = NULL;
 
 	// Get SSID header
 	len_ssid = httpd_req_get_hdr_value_len(req, "my-connect-ssid") + 1;
@@ -326,7 +339,7 @@ static esp_err_t http_server_wifi_connect_json_handler(httpd_req_t *req)
 		ssid_str = malloc(len_ssid);
 		if (httpd_req_get_hdr_value_str(req, "my-connect-ssid", ssid_str, len_ssid) == ESP_OK)
 		{
-			printf("http_server_wifi_connect_json_handler: Found header => my-connect-ssid: %s\n", ssid_str);
+			ESP_LOGI(gp_http_server_webpage_tag, "Found header => my-connect-ssid: %s\n", ssid_str);
 		}
 	}
 
@@ -337,7 +350,7 @@ static esp_err_t http_server_wifi_connect_json_handler(httpd_req_t *req)
 		pass_str = malloc(len_pass);
 		if (httpd_req_get_hdr_value_str(req, "my-connect-pwd", pass_str, len_pass) == ESP_OK)
 		{
-			printf("http_server_wifi_connect_json_handler: Found header => my-connect-pwd: %s\n", pass_str);
+			ESP_LOGI(gp_http_server_webpage_tag, "Found header => my-connect-pwd: %s\n", pass_str);
 		}
 	}
 
@@ -364,7 +377,7 @@ static esp_err_t http_server_wifi_connect_json_handler(httpd_req_t *req)
 ////////////////////////////////////////////////////////////////////////////////
 static esp_err_t http_server_wifi_connect_status_json_handler(httpd_req_t *req)
 {
-	printf("/wifiConnectStatus requested\n");
+	ESP_LOGI(gp_http_server_webpage_tag, "wifiConnectStatus requested");
 
 	char statusJSON[100];
 
@@ -386,7 +399,7 @@ static esp_err_t http_server_wifi_connect_status_json_handler(httpd_req_t *req)
 ////////////////////////////////////////////////////////////////////////////////
 static esp_err_t http_server_get_local_time_json_handler(httpd_req_t *req)
 {
-	printf ("/localTime.json requested\n");
+	ESP_LOGI(gp_http_server_webpage_tag, "localTime.json requested");
 
 	char localTimeJSON[100] = {0};
 
@@ -444,16 +457,16 @@ esp_err_t http_server_OTA_update_handler(httpd_req_t *req)
 
 			if (recv_len == HTTPD_SOCK_ERR_TIMEOUT)
 			{
-				printf("http_server_OTA_update_handler: Socket Timeout\n");
+				ESP_LOGI(gp_http_server_ota_tag, "Socket Timeout");
 				continue;
 			}
 						
-			printf("http_server_OTA_update_handler: OTA other Error %d\n", recv_len);
+			ESP_LOGI(gp_http_server_ota_tag, "OTA other Error %d\n", recv_len);
 
 			return ESP_FAIL;
 		}
 
-		printf("http_server_OTA_update_handler: OTA RX: %d of %d\r", content_received, content_length);
+		ESP_LOGI(gp_http_server_ota_tag, "OTA RX: %d of %d\r", content_received, content_length);
 
 		// Verify weather if this is the first occurence of any data = .bin file header,
 		// else proceed with writing OTA data to a selected partition over esp_ota_write()
@@ -467,19 +480,19 @@ esp_err_t http_server_OTA_update_handler(httpd_req_t *req)
 			// Calculating lenght of .bin body, without header or any metadata
 			int body_part_len = recv_len - (body_start_p - ota_buff);
 
-			printf("http_server_OTA_update_handler: OTA file size: %d\n", content_length);
+			ESP_LOGI(gp_http_server_ota_tag, "OTA file size: %d\n", content_length);
 
 			// Begin the update, OTA_SIZE_UNKNOWN provided so the whole partition can be erased before the update
 			esp_err_t err = esp_ota_begin(update_partition, OTA_SIZE_UNKNOWN, &ota_handle);
 			
 			if (err != ESP_OK)
 			{
-				printf("http_server_OTA_update_handler: ERROR with OTA begin, cancelling OTA\r\n");
+				ESP_LOGI(gp_http_server_ota_tag, "ERROR with OTA begin, cancelling OTA");
 				return ESP_FAIL;
 			}
 			else
 			{
-				printf("http_server_OTA_update_handler: Writing to partition subtype %d at offset 0x%lx\r\n", update_partition->subtype, update_partition->address);
+				ESP_LOGI(gp_http_server_ota_tag, "Writing to partition subtype %d at offset 0x%lx\r\n", update_partition->subtype, update_partition->address);
 			}
 
 			// Write OTA data
@@ -501,17 +514,17 @@ esp_err_t http_server_OTA_update_handler(httpd_req_t *req)
 		if (esp_ota_set_boot_partition(update_partition) == ESP_OK)
 		{
 			const esp_partition_t *boot_partition = esp_ota_get_boot_partition();
-			printf("http_server_OTA_update_handler: Next boot partition subtype %d at offset 0x%lx\n", boot_partition->subtype, boot_partition->address);
+			ESP_LOGI(gp_http_server_ota_tag,  "Next boot partition subtype %d at offset 0x%lx\n", boot_partition->subtype, boot_partition->address);
 			flash_successful = true;
 		}
 		else
 		{
-			printf("http_server_OTA_update_handler: FLASHED ERROR!!!\n");
+			ESP_LOGI(gp_http_server_ota_tag,  "FLASHED ERROR.");
 		}
 	}
 	else
 	{
-		printf("http_server_OTA_update_handler: esp_ota_end ERROR!!!\n");
+		ESP_LOGI(gp_http_server_ota_tag,  "esp_ota_end ERROR.");
 	}
 
 	// Send the message about the status
@@ -541,7 +554,7 @@ esp_err_t http_server_OTA_status_handler(httpd_req_t *req)
 {
 	char ota_json[100];
 
-	printf("OTAstatus requested");
+	ESP_LOGI(gp_http_server_ota_tag, "OTAstatus requested");
 
 	sprintf(ota_json, "{\"ota_update_status\":%d,\"compile_time\":\"%s\",\"compile_date\":\"%s\"}", g_fw_update_status, __TIME__, __DATE__);
 
@@ -569,7 +582,7 @@ static httpd_handle_t http_server_configure(void)
 	httpd_config_t config = HTTPD_DEFAULT_CONFIG();
 
     //TODO: Create HTTP server monitor task
-	xTaskCreate(&http_server_monitor, "http_server_monitor", HTTP_SERVER_MONITOR_STACK_SIZE, NULL, HTTP_SERVER_MONITOR_PRIORITY, &task_http_server_monitor);
+	xTaskCreate(&http_server_monitor, "http_server_monitor", HTTP_SERVER_MONITOR_STACK_SIZE, NULL, HTTP_SERVER_MONITOR_PRIORITY, &g_task_http_server_monitor);
 
     //TODO: Create the message queue
 	http_server_monitor_queue_handle = xQueueCreate(3, sizeof(http_server_queue_message_t));
@@ -586,13 +599,13 @@ static httpd_handle_t http_server_configure(void)
 	config.recv_wait_timeout = 10;
 	config.send_wait_timeout = 10;
 
-	printf(	"http_server_configure: Starting server on port: '%d' with task priority: '%d' \n", config.server_port, config.task_priority);
+	ESP_LOGI(gp_http_server_tag,  "Starting server on port: '%d' with task priority: '%d' \n", config.server_port, config.task_priority);
 
 	// Start the httpd server
 	if (httpd_start(&http_server_handle, &config) == ESP_OK)
 	{
-		printf("ENTERED THE HTTPD START\n");
-		printf("http_server_configure: Registering URI handlers\n");
+		ESP_LOGI(gp_http_server_tag, "ENTERED THE HTTPD START");
+		ESP_LOGI(gp_http_server_tag, "Registering URI handlers");
 
 		// register query handler
 		httpd_uri_t jquery_js = {
@@ -610,7 +623,6 @@ static httpd_handle_t http_server_configure(void)
 				.handler = http_server_index_html_handler,
 				.user_ctx = NULL
 		};
-		printf("pre-entering the HTML handler\n");
 		httpd_register_uri_handler(http_server_handle, &index_html);
 
 		// register app.css handler
@@ -700,6 +712,8 @@ static httpd_handle_t http_server_configure(void)
 
     return NULL;
 }
+
+
 ////////////////////////////////////////////////////////////////////////////////
 /**
  *	@} <!-- END GROUP -->
@@ -744,15 +758,15 @@ void http_server_stop(void)
 	if (http_server_handle)
 	{
 		httpd_stop(http_server_handle);
-		printf("http_server_stop: stopping HTTP server\n");
+		ESP_LOGI(gp_http_server_tag, "Stopping HTTP server");
 		http_server_handle = NULL;
 	}
 
-	if (task_http_server_monitor)
+	if (g_task_http_server_monitor)
 	{
-		vTaskDelete(task_http_server_monitor);
-		printf("http_server_stop: stopping HTTP server monitor\n");
-		task_http_server_monitor = NULL;
+		vTaskDelete(g_task_http_server_monitor);
+		ESP_LOGI(gp_http_server_tag, "stopping HTTP server monitor");
+		g_task_http_server_monitor = NULL;
 	}
 }
 
@@ -783,7 +797,7 @@ BaseType_t http_server_monitor_send_message(http_server_message_e msgID)
 ////////////////////////////////////////////////////////////////////////////////
 void http_server_fw_update_reset_callback(void *arg)
 {
-	printf("http_server_fw_update_reset_callback: Timer timed-out, restarting the device\n");
+	ESP_LOGI(gp_http_server_ota_tag, "Timer timed-out, restarting the device");
 	esp_restart();
 }
 
