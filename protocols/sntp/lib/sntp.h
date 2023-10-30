@@ -4,10 +4,10 @@
 // All rights reserved.
 ////////////////////////////////////////////////////////////////////////////////
 /**
- *	@file		sntop.h
+ *	@file		sntp.h
  *	@author   	Tibor Sovilj
  *	@date		24.10.2023
- *	@version	V0.0.1
+ *	@version	V1.0.0
 
  *	@brief 		Header file for the SNTP protocol.
  */

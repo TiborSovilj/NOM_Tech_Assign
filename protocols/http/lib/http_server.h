@@ -7,7 +7,7 @@
  *	@file		http_server.h
  *	@author   	Tibor Sovilj
  *	@date		16.10.2023
- *	@version	V0.0.1
+ *	@version	V1.0.0
 
  *	@brief 		Header file for the HTTP server..
  */

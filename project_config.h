@@ -7,7 +7,7 @@
  *	@file		project_config.h
  *	@author   	Tibor Sovilj
  *	@date		29.10.2023
- *	@version	V0.0.1
+ *	@version	V1.0.0
 
  *	@brief 		Header file for the project specific parameters. Defines stack
                 sizes for tasks and their respective priorities.

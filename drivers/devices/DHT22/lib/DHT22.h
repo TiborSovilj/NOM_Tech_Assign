@@ -7,7 +7,7 @@
  *	@file		DHT22.h
  *	@author   	Tibor Sovilj
  *	@date		20.10.2023
- *	@version	V0.0.1
+ *	@version	V1.0.0
 
  *	@brief 		Header file for the DHT22 temperature and humidty sensor.
  */

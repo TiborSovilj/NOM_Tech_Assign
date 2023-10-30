@@ -7,7 +7,7 @@
  *	@file		mqtt_cert.h
  *	@author   	Tibor Sovilj
  *	@date		26.10.2023
- *	@version	V0.0.1
+ *	@version	V1.0.0
 
  *	@brief 		Header file for MQTT TLS certificate. File contains prototype
                 for getter function that provides mqtt lib with certificate

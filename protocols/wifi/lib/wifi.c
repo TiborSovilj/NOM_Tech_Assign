@@ -7,7 +7,7 @@
  *	@file		wifi.c
  *	@author   	Tibor Sovilj
  *	@date		12.10.2023
- *	@version	V0.0.1
+ *	@version	V1.0.0
 
  *	@brief 		Source file for the WiFi protocol.
  */
