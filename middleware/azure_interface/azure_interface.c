@@ -1,21 +1,22 @@
 ////////////////////////////////////////////////////////////////////////////////
-// COPYRIGHT (c) 2023
+// COPYRIGHT (c) 2024
 // NOMNIO d.o.o.
 // All rights reserved.
 ////////////////////////////////////////////////////////////////////////////////
 /**
- *	@file		main.c
+ *	@file		azure_interface.c
  *	@author   	Tibor Sovilj
- *	@date		12.10.2023
- *	@version	V1.0.0
-
- *	@brief 		Main source file.
+ *	@date		28.1.2024
+ *	@version	V0.0.1
+ *
+ *	@brief 		Source file for the interface between Azure Middleware for 
+ *              FreeRTOS and the main app.
  */
 ////////////////////////////////////////////////////////////////////////////////
 
 ////////////////////////////////////////////////////////////////////////////////
 /**
- *	@addtogroup MAIN
+ *	@addtogroup AZURE_INTERFACE_STATIC
  *	@{ <!-- BEGIN GROUP -->
  */
 ////////////////////////////////////////////////////////////////////////////////
@@ -24,93 +25,48 @@
 // Includes
 ////////////////////////////////////////////////////////////////////////////////
 #include <stdio.h>
-#include <stdio.h>
 #include <stdint.h>
-#include <stddef.h>
-#include <string.h>
 
-#include "nvs_flash.h"
-#include "esp_log.h"
-#include "esp_wifi.h"
-#include "esp_system.h"
-#include "esp_event.h"
-#include "esp_netif.h"
-#include "mqtt_client.h"
-#include "esp_tls.h"
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
 
-#include "../protocols/wifi/lib/wifi.h"
-#include "../protocols/sntp/lib/sntp.h"
-#include "../protocols/mqtt/lib/mqtt.h"
-#include "../drivers/devices/DHT22/lib/DHT22.h"
-#include "../drivers/devices/irq_button/lib/irq_button.h"
-
-// UNCOMMENT WHEN FUNCTIONAL
-// #include "../middleware/azure_interface/azure_interface.h"
+#include "../../project_config.h"
+#include "azure_interface.h"
+//#include "../azure-iot-middleware-freertos/source/include/azure_iot_provisioning_client.h"
 
 ////////////////////////////////////////////////////////////////////////////////
 // Definitions
 ////////////////////////////////////////////////////////////////////////////////
 
 ////////////////////////////////////////////////////////////////////////////////
-// Typedefs
+// Static Typedefs
 ////////////////////////////////////////////////////////////////////////////////
 
 ////////////////////////////////////////////////////////////////////////////////
-// Global Variables
+// Static Global Variables
 ////////////////////////////////////////////////////////////////////////////////
 
 ////////////////////////////////////////////////////////////////////////////////
-// Function Prototypes
-////////////////////////////////////////////////////////////////////////////////
-void wifi_connected_event(void);
-
-
-////////////////////////////////////////////////////////////////////////////////
-// MAIN FUNCTION
+// Static Function Prototypes
 ////////////////////////////////////////////////////////////////////////////////
 
-void app_main(void)
-{
-    // Initialize NVS
-	esp_err_t ret = nvs_flash_init();
-	if (ret == ESP_ERR_NVS_NO_FREE_PAGES || ret == ESP_ERR_NVS_NEW_VERSION_FOUND)
-	{
-		ESP_ERROR_CHECK(nvs_flash_erase());
-		ret = nvs_flash_init();
-	}
-	ESP_ERROR_CHECK(ret);
-
-	wifi_app_start();                               // Start Wifi AP.
-	dht22_task_start();                             // Start DHT.
-	wifi_app_set_callback(&wifi_connected_event);   // Callback after the WiFi STA is connected.
-}
-
+static void azure_dps_task  (void * p_param);
 
 ////////////////////////////////////////////////////////////////////////////////
-// Function Definitions
+// Static Function Definitions
 ////////////////////////////////////////////////////////////////////////////////
 
 ////////////////////////////////////////////////////////////////////////////////
 /**
- * @brief 	Function that starts SNTP task and is used as callback function
- * 			to an eWIFI_APP_MSG_STA_CONNECTED_GOT_IP event
+ *  @brief      Azure DPS Task that handles DPS and fetching IoT Hub provisioned
+ *              data: device ID and Iot Hub host name.
  * 
- * @return voID
+ *  @param[in]  p_param     Task parameters. 
  */
 ////////////////////////////////////////////////////////////////////////////////
-void wifi_connected_event(void)
+static void azure_dps_task  (void * p_param)
 {
-	printf("WiFi STA Connected!");
-	sntp_task_start();                              // Start SNTP.
 
-	// azure provisioning app - uncomment when functional
-	// azure_provisioning_task();
-
-	// azure IOT hub task - uncomment when functional
-	// azure_iot_app();
-
-	mqtt_app_start();                               // Start MQTT.
-    irq_button_config();                            // Enable interrupt button
 }
 
 
@@ -120,3 +76,37 @@ void wifi_connected_event(void)
  */
 ////////////////////////////////////////////////////////////////////////////////
 
+////////////////////////////////////////////////////////////////////////////////
+/**
+ *	@addtogroup AZURE_INTERFACE_API
+ *	@{ <!-- BEGIN GROUP -->
+ */
+////////////////////////////////////////////////////////////////////////////////
+
+////////////////////////////////////////////////////////////////////////////////
+// API Function Definitions
+////////////////////////////////////////////////////////////////////////////////
+/**
+ *  @brief
+ * 
+ *  @return void 
+ */
+void azure_provisioning_task(void)
+{
+    xTaskCreate(azure_dps_task, "AzureDPSTask", AZURE_TASK_STACKSIZE, NULL, AZURE_TASK_PRIORITY, NULL);
+}
+
+/**
+ *  @brief
+ * 
+ *  @return void 
+ */
+void azure_iot_app(void)
+{
+
+}
+////////////////////////////////////////////////////////////////////////////////
+/**
+ *	@} <!-- END GROUP -->
+ */
+////////////////////////////////////////////////////////////////////////////////
